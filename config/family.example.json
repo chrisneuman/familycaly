@@ -25,6 +25,8 @@
     { "district": "sunprairie", "school": "cardinal-heights-upper-middle", "schoolName": "Central Heights", "menuType": "lunch" }
   ],
 
+  "night": { "dim": "21:00", "dark": "23:00", "wake": "06:00" },
+
   "countdowns": [
     { "title": "Halloween", "date": "2026-10-31" },
     { "title": "Winter break", "date": "2026-12-21", "yearly": false }

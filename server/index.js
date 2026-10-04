@@ -115,6 +115,9 @@ async function api(route, q) {
       location: config.location.name,
       countdowns: config.countdowns || [],
       lunch: schools.map((c) => c.schoolName || c.school),
+      units: config.units === 'celsius' ? 'celsius' : 'fahrenheit',
+      // Screen dims at `dim`, goes nearly black at `dark`, and comes back at `wake`. false turns it off.
+      night: config.night === false ? null : { dim: '21:00', dark: '23:00', wake: '06:00', ...(config.night || {}) },
       today: dayKey(new Date()),
     };
   }

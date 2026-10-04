@@ -139,3 +139,18 @@ button,[role="button"]{background:none;border:0;padding:0;margin:0;font:inherit;
   .week.cur{height:auto;min-height:max(25%,7rem)}
 }
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+
+/* night mode */
+.night{position:fixed;inset:0;z-index:40;background:#000;opacity:0;pointer-events:none;transition:opacity 1.2s ease;display:grid;place-items:center}
+.night.dim{opacity:.55}
+.night.dark{opacity:.94;pointer-events:auto}
+.night b{font-family:var(--display);font-weight:700;font-size:7rem;color:#fff;opacity:0;transition:opacity 1.2s ease;font-variant-numeric:tabular-nums}
+.night.dark b{opacity:.22}
+.moon{margin-left:0;display:flex;align-items:center;gap:.4rem}
+.moon svg{width:1rem;height:1rem}
+.moon.on{background:#1f2540;color:#fff}
+
+/* weather heads-ups */
+.card.tip{cursor:pointer}
+.card.tip .st{color:#1f7ae0}
+.wtip{margin:0 0 .5rem;padding:.5rem .75rem;border-radius:.75rem;background:var(--bg)}

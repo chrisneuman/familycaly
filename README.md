@@ -28,6 +28,7 @@ To keep it running after you close the terminal, use a process manager like `pm2
    - `sharedCalendars` is for a calendar that belongs to several people, e.g. `{ "name": "Family", "ical": "...", "people": ["chris", "jamie", "ava", "leo"] }`.
    - `meals.ical` is optional: one event per day on a "Meals" calendar shows as "Dinner tonight".
    - `lunch` is a list of schools. Each `school` is the name in that school's Nutrislice menu address (`https://sunprairie.nutrislice.com/menu/<school>/lunch/`), and `schoolName` is the label on its button.
+   - `night` sets when the screen dims, goes nearly black, and comes back (24-hour times). `"night": false` turns the schedule off.
    - `countdowns` repeat every year unless `"yearly": false`.
 3. **Restart it** (`npm start` again). The terminal should print a line like `5 people, 5 calendars`.
 4. **Point the Pi at it.** Set the Kiosk OS start page to `http://<home-lab-ip>:8080`.
@@ -43,7 +44,7 @@ The repo also has a `Dockerfile` and `docker-compose.yml`. From the project fold
 - `server/` is a small Node server with no framework. It fetches the calendars every few minutes, weather every 15 minutes (Open-Meteo, no key needed) and lunch hourly (Nutrislice). It caches everything and keeps serving the last good copy if the internet drops. The screen shows a small "offline" tag when that happens.
 - Events are split into days on the server, in the `timezone` from `family.json`. An invite that's on two people's calendars shows once, with both colors.
 - `public/` is the screen, in plain JavaScript and CSS with no build step, kept light for the Pi 3. It scales to the screen size and also works in portrait.
-- On the screen: tap a photo to hide or show that person (the Pi remembers). Tap a day for details, and tap a yellow school button for that school's lunch menu. After 90 seconds with no touch it closes any open panel and scrolls back to this week. It reloads itself at 3:30am each night.
+- On the screen: tap a photo to hide or show that person (the Pi remembers). Tap a day for details, and tap a yellow school button for that school's lunch menu. The moon button turns night mode on (dark right away) or off until morning, and a tap lights a dark screen back up. "Heads up" cards in the today strip warn about rain, cold, heat and strong sun, and in the evening about tomorrow. After 90 seconds with no touch it closes any open panel and scrolls back to this week. It reloads itself at 3:30am each night.
 
 ## Security
 
