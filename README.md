@@ -4,9 +4,12 @@ A wall calendar for a touchscreen. A small Node server runs on a computer at hom
 
 Each person's Google Calendar shows in their own color. There's a photo button to show or hide each person, plus weather, school lunch, countdowns and a night mode, all in one screen that's easy to read from across the kitchen.
 
+![The family calendar on a 1080p screen](docs/screenshots/calendar.png)
+
 ## Contents
 
 - [Features](#features)
+- [Screenshots](#screenshots)
 - [What you need](#what-you-need)
 - [Quick start (try it with sample data)](#quick-start-try-it-with-sample-data)
 - [Setup guide](#setup-guide)
@@ -62,6 +65,21 @@ Each person's Google Calendar shows in their own color. There's a photo button t
 - It reloads itself at 3:30am, so a browser left running for weeks stays quick.
 - It keeps showing the last good data if the internet drops, with a small "offline" tag.
 - It's light enough for a Raspberry Pi 3: no framework, no build step, and no fonts or scripts from other sites.
+
+## Screenshots
+
+All screenshots use the built-in sample family (`npm run demo`).
+
+| | |
+| --- | --- |
+| ![Tapping a day shows its events with times, places and who's going](docs/screenshots/day-details.png) | ![The weather panel with the next 12 hours and a 10-day forecast](docs/screenshots/weather.png) |
+| **Day details.** Tap any day. | **Weather.** Tap the weather at the top. |
+| ![A school's lunch menu for the next two weeks](docs/screenshots/lunch.png) | ![The countdowns panel with a form to add one](docs/screenshots/countdowns.png) |
+| **School lunch.** One button per school. | **Countdowns.** Add and remove them on the screen. |
+| ![Two people toggled off, their events hidden](docs/screenshots/people-toggled.png) | ![The screen dimmed by night mode](docs/screenshots/night-dim.png) |
+| **People.** Tap a photo to hide or show that person. | **Night mode.** Dims at 9pm and goes nearly black at 11pm. |
+
+<p align="center"><img src="docs/screenshots/portrait.png" width="360" alt="The calendar on a portrait screen"><br><b>Portrait.</b> The layout adapts when the screen is turned.</p>
 
 ## What you need
 
