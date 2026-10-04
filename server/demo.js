@@ -76,10 +76,13 @@ function meals(fromKey, toKey) {
 }
 
 const WX = [[62, 44, 'partly', 10], [66, 48, 'sun', 0], [58, 46, 'rain', 80], [54, 40, 'cloud', 30], [57, 38, 'sun', 0], [61, 45, 'partly', 10], [63, 50, 'rain', 60], [55, 41, 'cloud', 20], [52, 36, 'sun', 0], [56, 39, 'partly', 10]];
+const HOURLY = [[58, 'partly', 10], [60, 'partly', 10], [61, 'sun', 0], [62, 'sun', 0], [61, 'sun', 0], [59, 'partly', 5], [56, 'cloud', 15], [53, 'cloud', 20], [51, 'cloud', 25], [49, 'rain', 40], [48, 'rain', 55], [47, 'rain', 60]];
 function weather() {
+  const h0 = new Date().getHours();
   return {
-    current: { t: 58, feels: 55, c: 'partly', wind: '8 mph NW' },
-    daily: WX.map(([hi, lo, c, p], i) => ({ k: dayKey(addDays(today(), i)), hi, lo, c, p })),
+    current: { t: 58, feels: 55, c: 'partly', wind: '8 mph NW', humidity: 62 },
+    hourly: HOURLY.map(([t, c, p], i) => ({ h: `${String((h0 + i) % 24).padStart(2, '0')}:00`, t, c, p })),
+    daily: WX.map(([hi, lo, c, p], i) => ({ k: dayKey(addDays(today(), i)), hi, lo, c, p, sunrise: '07:04', sunset: '18:26', uv: [4, 5, 2, 3, 5, 4, 2, 3, 4, 4][i] })),
   };
 }
 

@@ -283,6 +283,27 @@
     openSheet(`<h2>School lunch</h2><p class="sub">${esc((lu && lu.school) || '')}</p>${rows}<p class="foot">From Nutrislice, refreshed hourly.</p>`);
   }
 
+  function openWeather() {
+    const w = S.weather;
+    if (!w) return;
+    const c = w.current, t = S.wxByKey[S.tkey] || w.daily[0];
+    const extras = [`Feels like ${c.feels}°`, `Wind ${c.wind}`];
+    if (c.humidity != null) extras.push(`Humidity ${c.humidity}%`);
+    const sun = t.sunrise ? `<p class="foot">Sunrise ${fmtTime(t.sunrise)} · Sunset ${fmtTime(t.sunset)}${t.uv ? ` · UV index ${t.uv}` : ''}</p>` : '';
+    const hours = (w.hourly || []).map((h, i) => `<div class="hr"><span class="hh">${i === 0 ? 'Now' : fmtTime(h.h)}</span>${wxIcon(h.c, '1.75rem')}<b>${h.t}°</b><span class="hp">${h.p >= 10 ? `${h.p}%` : ''}</span></div>`).join('');
+    const days = w.daily.filter((d) => d.k >= S.tkey).slice(0, 10);
+    const lo = Math.min(...days.map((d) => d.lo)), hi = Math.max(...days.map((d) => d.hi)), span = Math.max(1, hi - lo);
+    const rows = days.map((d) => {
+      const dt = parseKey(d.k), off = offOf(dt);
+      const left = ((d.lo - lo) / span) * 100, width = Math.max(4, ((d.hi - d.lo) / span) * 100);
+      return `<div class="wrow"><span class="lday">${off === 0 ? 'Today' : off === 1 ? 'Tmrw' : DOW[dt.getDay()]}</span>${wxIcon(d.c, '1.75rem')}<span class="wp">${d.p >= 10 ? `${d.p}%` : ''}</span><span class="wlo">${d.lo}°</span><span class="wbar"><i style="left:${left.toFixed(1)}%;width:${width.toFixed(1)}%"></i></span><span class="whi">${d.hi}°</span></div>`;
+    }).join('');
+    openSheet(`<h2>${c.t}° ${WXL[c.c] || ''}</h2><p class="sub">${esc(S.config.location || '')} · High ${t.hi}° · Low ${t.lo}°</p>`
+      + `<p class="wmeta">${extras.map(esc).join(' · ')}</p>`
+      + (hours ? `<div class="hours">${hours}</div>` : '')
+      + `<div class="wdays">${rows}</div>${sun}<p class="foot">Percentages are the chance of rain. From Open-Meteo, refreshed every 15 minutes.</p>`);
+  }
+
   function scrollToday(smooth) {
     const ws = $('#weeks');
     ws.scrollTo({ top: ws.children[WEEKS_BEFORE].offsetTop, behavior: smooth ? 'smooth' : 'auto' });
@@ -313,6 +334,7 @@
     else if (a === 'toggle') toggle(t.dataset.id);
     else if (a === 'day') openDay(t.dataset.k);
     else if (a === 'lunch') openLunch();
+    else if (a === 'weather') openWeather();
     else if (a === 'today') scrollToday(true);
   });
   document.addEventListener('keydown', (e) => {

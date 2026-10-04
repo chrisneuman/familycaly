@@ -14,12 +14,25 @@ function condition(code) {
 
 const COMPASS = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
 
+const hm = (iso) => (typeof iso === 'string' ? iso.slice(11, 16) : null);
+
+function nextHours(h, nowIso, n) {
+  const start = Math.max(0, h.time.findIndex((t) => t.slice(0, 13) === String(nowIso).slice(0, 13)));
+  return h.time.slice(start, start + n).map((t, i) => ({
+    h: hm(t),
+    t: Math.round(h.temperature_2m[start + i]),
+    c: condition(h.weather_code[start + i]),
+    p: h.precipitation_probability[start + i] ?? 0,
+  }));
+}
+
 async function loadWeather({ latitude, longitude }, units) {
   const metric = units === 'celsius';
   const q = new URLSearchParams({
     latitude, longitude,
-    current: 'temperature_2m,apparent_temperature,weather_code,wind_speed_10m,wind_direction_10m',
-    daily: 'weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max',
+    current: 'temperature_2m,apparent_temperature,relative_humidity_2m,weather_code,wind_speed_10m,wind_direction_10m',
+    hourly: 'temperature_2m,weather_code,precipitation_probability',
+    daily: 'weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,sunrise,sunset,uv_index_max',
     temperature_unit: metric ? 'celsius' : 'fahrenheit',
     wind_speed_unit: metric ? 'kmh' : 'mph',
     timezone: 'auto',
@@ -33,13 +46,19 @@ async function loadWeather({ latitude, longitude }, units) {
       feels: Math.round(c.apparent_temperature),
       c: condition(c.weather_code),
       wind: `${Math.round(c.wind_speed_10m)} ${metric ? 'km/h' : 'mph'} ${COMPASS[Math.round(c.wind_direction_10m / 45) % 8]}`,
+      humidity: Math.round(c.relative_humidity_2m),
     },
+    // Next 12 hours, starting with the current hour. Times are local (timezone=auto).
+    hourly: nextHours(j.hourly, c.time, 12),
     daily: j.daily.time.map((date, i) => ({
       k: date,
       hi: Math.round(j.daily.temperature_2m_max[i]),
       lo: Math.round(j.daily.temperature_2m_min[i]),
       c: condition(j.daily.weather_code[i]),
       p: j.daily.precipitation_probability_max[i] ?? 0,
+      sunrise: hm(j.daily.sunrise[i]),
+      sunset: hm(j.daily.sunset[i]),
+      uv: Math.round(j.daily.uv_index_max[i] ?? 0),
     })),
   };
 }
