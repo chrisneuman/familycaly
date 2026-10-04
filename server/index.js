@@ -18,7 +18,7 @@ const config = DEMO ? demo.config : JSON.parse(fs.readFileSync(configPath, 'utf8
 // Dates are bucketed into days on the server, so it must run in the family's timezone.
 if (config.timezone) process.env.TZ = config.timezone;
 
-const { cached, addDays, dayKey } = require('./util');
+const { cached, addDays, dayKey, parseKey } = require('./util');
 const { loadEvents, loadMeals } = require('./calendar');
 const { loadWeather } = require('./weather');
 const { loadLunch } = require('./lunch');
@@ -73,10 +73,22 @@ const getLunch = cached(60 * MIN, () => {
 
 // ---- http ------------------------------------------------------------------
 
-const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml', '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.webp': 'image/webp', '.json': 'application/json' };
+const TYPES = { '.woff2': 'font/woff2', '.txt': 'text/plain; charset=utf-8', '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml', '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.webp': 'image/webp', '.json': 'application/json' };
+
+// Everything the page needs comes from this server. Style attributes stay allowed
+// because the screen sets each person's color inline.
+const SECURITY_HEADERS = {
+  'content-security-policy': "default-src 'self'; script-src 'self'; style-src 'self'; style-src-attr 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'",
+  'x-content-type-options': 'nosniff',
+  'x-frame-options': 'DENY',
+  'referrer-policy': 'no-referrer',
+  'permissions-policy': 'camera=(), microphone=(), geolocation=(), payment=(), usb=()',
+  'cross-origin-opener-policy': 'same-origin',
+  'cross-origin-resource-policy': 'same-origin',
+};
 
 function send(res, status, body, type = 'application/json', extra = {}) {
-  res.writeHead(status, { 'content-type': type, 'cache-control': 'no-store', ...extra });
+  res.writeHead(status, { 'content-type': type, 'cache-control': 'no-store', ...SECURITY_HEADERS, ...extra });
   res.end(type === 'application/json' ? JSON.stringify(body) : body);
 }
 
@@ -90,6 +102,12 @@ function serveFile(res, root, rel) {
 }
 
 const isKey = (s) => typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s);
+
+// The screen asks for 63 days at a time; anything much bigger is refused so a
+// stray request can't make the server expand years of recurring events.
+const MAX_RANGE_DAYS = 120;
+
+class BadRequest extends Error {}
 
 async function api(route, q) {
   if (route === 'config') {
@@ -105,6 +123,8 @@ async function api(route, q) {
   if (route === 'events') {
     const from = isKey(q.get('from')) ? q.get('from') : dayKey(addDays(new Date(), -7));
     const to = isKey(q.get('to')) ? q.get('to') : dayKey(addDays(new Date(), 56));
+    const days = Math.round((parseKey(to) - parseKey(from)) / 864e5) + 1;
+    if (!(days >= 1 && days <= MAX_RANGE_DAYS)) throw new BadRequest(`date range must be 1 to ${MAX_RANGE_DAYS} days`);
     const r = await getEvents({ from, to });
     return { ...r.data, stale: r.stale };
   }
@@ -124,6 +144,7 @@ const server = http.createServer(async (req, res) => {
     if (url.pathname.startsWith('/photos/')) return serveFile(res, path.join(CONFIG_DIR, 'photos'), decodeURIComponent(url.pathname.slice(8)));
     return serveFile(res, PUBLIC_DIR, url.pathname === '/' ? 'index.html' : url.pathname.slice(1));
   } catch (err) {
+    if (err instanceof BadRequest) return send(res, 400, { error: err.message });
     console.error(`[${url.pathname}] ${err.message}`);
     return send(res, 502, { error: err.message });
   }
