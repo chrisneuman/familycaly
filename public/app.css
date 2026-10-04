@@ -48,6 +48,10 @@ button,[role="button"]{background:none;border:0;padding:0;margin:0;font:inherit;
 .av svg{width:1.75rem;height:1.75rem}
 .ck{position:absolute;top:-.3125rem;right:-.3125rem;width:1.25rem;height:1.25rem;border-radius:50%;background:var(--ink);color:#fff;display:grid;place-items:center;box-shadow:0 0 0 .125rem var(--bg);transition:transform .2s}
 .ck svg{width:.75rem;height:.75rem}
+.pp .nm{background:var(--c);color:var(--pi,#fff);border-radius:999px;padding:.125rem .5rem;line-height:1.3;transition:background-color .2s}
+.av:has(img){box-shadow:0 0 0 .1875rem var(--c)}
+.pp.off .nm{background:#c8cedb;color:#fff}
+.pp.off .av:has(img){box-shadow:none}
 .pp.off{opacity:.55}
 .pp.off .av{background-color:#c8cedb;color:#fff;transform:scale(.86)}
 .pp.off .av img{filter:grayscale(1) opacity(.6)}
