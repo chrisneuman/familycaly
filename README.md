@@ -220,9 +220,9 @@ Environment variables, if you need them: `PORT` (default 8080), `CONFIG_DIR` (de
 
 ## Running it all the time
 
-`npm start` stops when the terminal closes or the computer restarts. For a screen that's always on, use one of these.
+`npm start` stops when the terminal closes or the computer restarts. For a screen that's always on, use one of these. Docker (Compose or Portainer) is the easiest on a home lab.
 
-### Docker (recommended for a home lab)
+### Docker Compose
 
 ```sh
 docker compose up -d --build
@@ -231,8 +231,43 @@ docker compose up -d --build
 - It restarts on its own after a reboot or crash.
 - `./config` is mounted read-only, so the same `family.json` and photos work.
 - Countdowns added on the screen are kept in a Docker volume named `calendar-data`.
-- Set `TZ` in `docker-compose.yml` to your time zone.
+- Set `TZ` to your time zone, either in a `.env` file next to `docker-compose.yml` or in your shell. `PORT` and `CONFIG_PATH` work the same way.
 - Logs: `docker logs family-calendar`.
+
+### Portainer (stack from this Git repo)
+
+Portainer can build and run the calendar straight from GitHub. Your settings never go into Git, so they live in a folder on the Docker host and the stack mounts it.
+
+1. **Make the settings folder on the Docker host** and copy your files in. Copy them straight from the computer that has them, never through GitHub or a chat:
+
+   ```sh
+   sudo mkdir -p /opt/familycaly/config/photos
+   # from the computer that has them, for example:
+   scp config/family.json  user@docker-host:/opt/familycaly/config/
+   scp config/photos/*     user@docker-host:/opt/familycaly/config/photos/
+   ```
+
+   The container runs as an ordinary user, so the files need to be readable by everyone (`chmod -R a+rX /opt/familycaly/config`). They don't need to be writable.
+2. In Portainer, go to **Stacks › Add stack** and choose **Repository**.
+   - **Repository URL:** `https://github.com/chrisneuman/familycaly`
+   - **Repository reference:** `refs/heads/main`
+   - **Compose path:** `docker-compose.yml`
+   - If the repo is private, turn on **Authentication**. Use your GitHub username and a [fine-grained token](https://github.com/settings/personal-access-tokens/new) limited to this repo with **Contents: Read-only**.
+3. Under **Environment variables**, add:
+
+   | Name | Value |
+   | --- | --- |
+   | `CONFIG_PATH` | `/opt/familycaly/config` (the folder from step 1) |
+   | `TZ` | your time zone, e.g. `America/Chicago` |
+   | `PORT` | only if 8080 is taken on the host, e.g. `8090` |
+
+4. Optionally turn on **GitOps updates** (polling, or a webhook). Then merging to `main` on GitHub rebuilds and redeploys the calendar automatically.
+5. Click **Deploy the stack**. Open `http://<docker-host>:8080` and check that your family shows, not the "Sample data" tag.
+
+- **Changing settings or photos:** edit the files in `/opt/familycaly/config`. New photos show on the next page reload. For changes to `family.json`, restart the container in Portainer.
+- **Countdowns:** they're kept in the `calendar-data` volume, so redeploys and updates don't lose them.
+
+If the screen shows "Sample data", the container can't see `family.json`. Check that `CONFIG_PATH` is set and that the path is right on the Docker host itself.
 
 ### pm2 (plain Node)
 
@@ -249,12 +284,16 @@ On a Mac with Homebrew Node, fix the certificate problem first (see [Troubleshoo
 
 ## Updating
 
+**Portainer:** open the stack and click **Pull and redeploy**. With GitOps updates on, it happens by itself after each merge to `main`.
+
+**Everything else:** get the new code, then restart.
+
 ```sh
 git pull
 npm install
 ```
 
-Then restart: `docker compose up -d --build` for Docker, `pm2 restart family-calendar` for pm2, or Ctrl+C and `npm start` again if you run it in a terminal. The screen picks up the new version on its next reload, or at 3:30am.
+Restart with `docker compose up -d --build` for Docker Compose, `pm2 restart family-calendar` for pm2, or Ctrl+C and `npm start` again in a terminal. The screen picks up the new version on its next reload, or at 3:30am.
 
 ## Troubleshooting
 
@@ -279,7 +318,7 @@ Then restart: `docker compose up -d --build` for Docker, `pm2 restart family-cal
 
 **My change doesn't show on the screen.** Reload the page. If you changed `family.json`, restart the server first.
 
-**Wrong day or time for events.** Check `timezone` in `family.json`, and `TZ` in `docker-compose.yml` if you use Docker.
+**Wrong day or time for events.** Check `timezone` in `family.json`, and the `TZ` variable if you use Docker or Portainer.
 
 ## How it works
 
