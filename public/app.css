@@ -1,3 +1,7 @@
+/* Fonts ship with the app (SIL Open Font License, see fonts/), so the Pi never contacts Google. */
+@font-face{font-family:'Figtree';src:url(fonts/figtree.woff2) format('woff2');font-weight:300 900;font-style:normal;font-display:swap}
+@font-face{font-family:'Bricolage Grotesque';src:url(fonts/bricolage-grotesque.woff2) format('woff2');font-weight:200 800;font-style:normal;font-display:swap}
+
 /* Design B "Fridge". Sized in rem; the root font size scales with the screen,
    so a 1920x1080 panel gets the same layout as the 1280x800 mockup, just larger. */
 :root{

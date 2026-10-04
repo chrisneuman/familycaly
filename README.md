@@ -44,10 +44,15 @@ The repo also has a `Dockerfile` and `docker-compose.yml`. From the project fold
 - `public/` is the screen, in plain JavaScript and CSS with no build step, kept light for the Pi 3. It scales to the screen size and also works in portrait.
 - On the screen: tap a photo to hide or show that person (the Pi remembers). Tap a day for details, and tap the yellow button for the lunch menu. After 90 seconds with no touch it closes any open panel and scrolls back to this week. It reloads itself at 3:30am each night.
 
+## Security
+
+- The calendar links in `config/family.json` work like passwords. Keep that file private; git already ignores it.
+- The server only reads. It sends strict browser security headers, refuses event requests longer than 120 days, and loads nothing from other sites (the fonts ship in `public/fonts`).
+- There's no login, so anyone on your home network can open the page. Don't port-forward it to the internet; use a VPN such as Tailscale to see it away from home.
+
 ## Known gaps
 
 - **School lunch is unverified.** The Nutrislice feed address and format are inferred from how its menu site works, and haven't been checked against the live site yet. If the lunch button doesn't appear and the screen says "Lunch menu offline", check the server's output for the error.
-- **Fonts load from Google Fonts.** Without internet the screen falls back to the Pi's built-in sans-serif.
 
 ## Tests
 

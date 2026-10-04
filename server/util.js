@@ -24,6 +24,8 @@ const addDays = (d, n) => {
  * value is served (marked stale) so the wall screen keeps showing data
  * through an internet blip.
  */
+const MAX_ENTRIES = 16;
+
 function cached(ttlMs, load) {
   const entries = new Map();
   return async (arg = '') => {
@@ -32,7 +34,9 @@ function cached(ttlMs, load) {
     if (hit && Date.now() - hit.at < ttlMs) return { data: hit.data, stale: false };
     try {
       const data = await load(arg);
+      entries.delete(id);
       entries.set(id, { data, at: Date.now() });
+      if (entries.size > MAX_ENTRIES) entries.delete(entries.keys().next().value);
       return { data, stale: false };
     } catch (err) {
       console.error(`[fetch] ${err.message}`);
