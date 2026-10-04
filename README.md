@@ -106,7 +106,7 @@ The secret address only appears for calendars the signed-in account owns, or has
 
 **Treat these addresses like passwords.** Anyone who has one can read that calendar, so don't paste them in chats or commit them anywhere. If one leaks, click **Reset** next to it in Google Calendar and paste the new one.
 
-A person with several calendars can list them all: `"ical": ["https://…basic.ics", "https://…basic.ics"]`.
+If someone shows far fewer events than you expect, you probably copied a secondary calendar (like Holidays or Birthdays) instead of their main one; the main one is usually named after them. A person with several calendars can list them all: `"ical": ["https://…basic.ics", "https://…basic.ics"]`.
 
 ### 3. Add the family
 
@@ -245,6 +245,8 @@ pm2 startup   # prints one command to run so it starts at boot
 
 Logs: `pm2 logs family-calendar`.
 
+On a Mac with Homebrew Node, fix the certificate problem first (see [Troubleshooting](#troubleshooting)), or start it as `SSL_CERT_FILE=/etc/ssl/cert.pem pm2 start server/index.js --name family-calendar`. pm2 keeps the settings it was started with, so without this everything shows as offline.
+
 ## Updating
 
 ```sh
@@ -252,7 +254,7 @@ git pull
 npm install
 ```
 
-Then restart: `docker compose up -d --build` for Docker, or `pm2 restart family-calendar` for pm2. The screen picks up the new version on its next reload, or at 3:30am.
+Then restart: `docker compose up -d --build` for Docker, `pm2 restart family-calendar` for pm2, or Ctrl+C and `npm start` again if you run it in a terminal. The screen picks up the new version on its next reload, or at 3:30am.
 
 ## Troubleshooting
 
@@ -262,14 +264,14 @@ Then restart: `docker compose up -d --build` for Docker, or `pm2 restart family-
 
 **A person's events are missing.**
 - Make sure you used the *secret* iCal address, not the public one.
-- Check the terminal for a `[calendar]` error naming that person.
+- Check the terminal for a `[calendar]` line naming that person. The screen also shows "Some calendars didn't update" when one fails.
 - A brand-new event can take up to 5 minutes to appear, and Google itself sometimes takes longer to update the feed.
 
 **Someone has fewer events than expected.** They may keep events on a second calendar. Add that calendar's secret address to their `ical` list.
 
 **Two people's events show up together, or a toggle hides the wrong person.** Check that every person has a different `id` and a different `ical` link. Pasting the same link twice shows that calendar under both people.
 
-**`UNABLE_TO_GET_ISSUER_CERT_LOCALLY` or other certificate errors (Mac with Homebrew Node).** Homebrew's Node can't find the system certificates, so it can't reach Google or the weather service. Run `brew postinstall openssl@3` once, or start the server with the macOS certificates: `SSL_CERT_FILE=/etc/ssl/cert.pem npm start`. Docker isn't affected.
+**`UNABLE_TO_GET_ISSUER_CERT_LOCALLY` or other certificate errors (Mac with Homebrew Node).** Homebrew's Node can't find the system certificates, so it can't reach Google or the weather service. Run `brew postinstall openssl@3` once, or start the server with the macOS certificates: `SSL_CERT_FILE=/etc/ssl/cert.pem npm start`. Docker isn't affected. If you use pm2, see [pm2](#pm2-plain-node).
 
 **"Weather offline" or "Lunch menu offline".** That service didn't answer. The screen keeps showing the last good copy and tries again on its own. Check the terminal for the error. Right after a restart there's no copy yet, so a reload a minute later usually clears it.
 
