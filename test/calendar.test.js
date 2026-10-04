@@ -124,3 +124,19 @@ test('parses a Nutrislice day into entrees and sides', () => {
   assert.deepStrictEqual(day, { entrees: ['Chicken Tenders', 'Cheese Pizza'], sides: ['Green Beans'] });
   assert.strictEqual(parseDay({ date: '2026-10-10', menu_items: [] }), null);
 });
+
+test('skips Nutrislice connector rows and joins "with" onto the dish before it', () => {
+  const day = parseDay({
+    date: '2026-10-05',
+    menu_items: [
+      { is_section_title: true, text: 'Entrees' },
+      { food: { name: 'WG Chicken Nuggets (C)', food_category: 'entree' } },
+      { text: 'With', food: null },
+      { food: { name: 'Sun Chips', food_category: 'entree' } },
+      { text: 'or', food: null },
+      { text: '', food: null },
+      { food: { name: 'Fruit & Yogurt Parfait (V)', food_category: 'entree' } },
+    ],
+  });
+  assert.deepStrictEqual(day.entrees, ['WG Chicken Nuggets (C) with Sun Chips', 'Fruit & Yogurt Parfait (V)']);
+});
