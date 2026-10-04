@@ -154,3 +154,17 @@ button,[role="button"]{background:none;border:0;padding:0;margin:0;font:inherit;
 .card.tip{cursor:pointer}
 .card.tip .st{color:#1f7ae0}
 .wtip{margin:0 0 .5rem;padding:.5rem .75rem;border-radius:.75rem;background:var(--bg)}
+
+/* countdowns */
+.card.add{width:auto;min-width:6rem;align-items:center;justify-content:center;background:transparent;color:var(--muted);box-shadow:inset 0 0 0 .09rem var(--line);font-weight:700;font-size:.8125rem;cursor:pointer}
+.card.add span{font-size:1.75rem;line-height:1;color:var(--accent)}
+.card.extra[data-act]{cursor:pointer}
+.srow.cd{grid-template-columns:auto minmax(0,1fr) auto}
+.rm{background:var(--bg);border-radius:999px;padding:.4rem .8rem;font-weight:700;font-size:.8125rem;color:#c0264b}
+.cdform{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;margin-top:1rem;padding-top:1rem;border-top:.09rem solid var(--line)}
+.cdform input[name=title]{flex:1 1 12rem}
+.cdform input[name=title],.cdform input[type=date]{font:inherit;font-size:1rem;padding:.6rem .8rem;border-radius:.75rem;border:.09rem solid var(--line);background:var(--bg);color:var(--fg)}
+.cdform .yr{display:flex;align-items:center;gap:.35rem;font-weight:600;font-size:.875rem}
+.cdform .yr input{width:1.2rem;height:1.2rem}
+.cdform .add{margin-left:0;background:var(--accent);color:#fff}
+.err{color:#c0264b}

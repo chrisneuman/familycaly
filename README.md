@@ -23,21 +23,21 @@ To keep it running after you close the terminal, use a process manager like `pm2
    That field only appears on calendars the account owns or can "make changes and manage sharing" on. If a family member owns their calendar, either copy it while signed in as them, or give the shared account that permission.
    Treat these addresses like passwords. Anyone with one can read that calendar.
 2. **Write the settings file.** Copy `config/family.example.json` to `config/family.json` and fill in names, colors and the iCal addresses.
-   - `photo` is a file name inside `config/photos/` (a square JPG around 300px works well). Leave it out to show an initial instead.
+   - Photos: put a square picture (around 300px) in `config/photos/` named after the person's `id`, like `mom.jpg` (`.jpeg`, `.png` and `.webp` work too). New photos show up on the next page load, no restart needed. `photo` can name a different file instead. Without a photo the button shows an initial.
    - `dog: true` shows a paw when there's no photo.
    - `sharedCalendars` is for a calendar that belongs to several people, e.g. `{ "name": "Family", "ical": "...", "people": ["chris", "jamie", "ava", "leo"] }`.
    - `meals.ical` is optional: one event per day on a "Meals" calendar shows as "Dinner tonight".
    - `lunch` is a list of schools. Each `school` is the name in that school's Nutrislice menu address (`https://sunprairie.nutrislice.com/menu/<school>/lunch/`), and `schoolName` is the label on its button.
    - `night` sets when the screen dims, goes nearly black, and comes back (24-hour times). `"night": false` turns the schedule off.
-   - `countdowns` repeat every year unless `"yearly": false`.
+   - `countdowns` is only the starting list. After the first run, add and remove countdowns on the screen (tap a countdown card or the **+ Countdown** button); they're saved in `data/countdowns.json`.
 3. **Restart it** (`npm start` again). The terminal should print a line like `5 people, 5 calendars`.
 4. **Point the Pi at it.** Set the Kiosk OS start page to `http://<home-lab-ip>:8080`.
 
-Changing `family.json` or photos needs a restart.
+Changing `family.json` needs a restart.
 
 ## Docker (later)
 
-The repo also has a `Dockerfile` and `docker-compose.yml`. From the project folder run `docker compose up -d --build`. It mounts `./config` into the container, so the same `family.json` and photos work. Check `docker logs family-calendar` if something looks wrong.
+The repo also has a `Dockerfile` and `docker-compose.yml`. From the project folder run `docker compose up -d --build`. It mounts `./config` into the container read-only, so the same `family.json` and photos work, and keeps countdowns added on the screen in a Docker volume. Check `docker logs family-calendar` if something looks wrong.
 
 ## How it works
 

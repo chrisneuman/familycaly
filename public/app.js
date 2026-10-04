@@ -176,13 +176,15 @@
     return tips.slice(0, 2);
   }
 
-  function countdowns() {
+  /** Every countdown with its next date, soonest first. Past one-time dates drop off. */
+  function allCountdowns() {
     return (S.config.countdowns || []).map((c) => {
-      let d = parseKey(c.date);
-      if (c.yearly !== false && d < S.today) d.setFullYear(d.getFullYear() + 1);
-      return { title: c.title, days: offOf(d) };
-    }).filter((c) => c.days >= 0).sort((a, b) => a.days - b.days).slice(0, 2);
+      const d = parseKey(c.date);
+      if (c.yearly !== false) while (d < S.today) d.setFullYear(d.getFullYear() + 1);
+      return { ...c, next: d, days: offOf(d) };
+    }).filter((c) => c.days >= 0).sort((a, b) => a.days - b.days);
   }
+  const countdowns = () => allCountdowns().slice(0, 2);
 
   // ---- rendering --------------------------------------------------------------
 
@@ -218,7 +220,8 @@
     for (const x of weatherTips()) h += `<div class="card extra tip" data-act="weather"><span class="st">Heads up</span><span class="tm">${esc(x.t)}</span><span class="who">${esc(x.s)}</span></div>`;
     const dinner = S.meals[S.tkey];
     if (dinner) h += `<div class="card extra"><span class="st">Dinner tonight</span><span class="tm">${esc(dinner)}</span><span class="who">From the Meals calendar</span></div>`;
-    for (const c of countdowns()) h += `<div class="card extra"><span class="st">Countdown</span><span class="tm">${c.days === 0 ? 'Today!' : c.days === 1 ? '1 day' : `${c.days} days`}</span><span class="ti">until ${esc(c.title)}</span></div>`;
+    for (const c of countdowns()) h += `<div class="card extra" data-act="countdowns"><span class="st">Countdown</span><span class="tm">${c.days === 0 ? 'Today!' : c.days === 1 ? '1 day' : `${c.days} days`}</span><span class="ti">until ${esc(c.title)}</span></div>`;
+    h += '<button class="card add" data-act="countdowns" aria-label="Add or remove countdowns"><span>+</span>Countdown</button>';
     $('#strip').innerHTML = h;
   }
 
@@ -345,6 +348,41 @@
       + `<div class="wdays">${rows}</div>${sun}<p class="foot">Percentages are the chance of rain. From Open-Meteo, refreshed every 15 minutes.</p>`);
   }
 
+  function openCountdowns(msg) {
+    const list = allCountdowns();
+    const rows = list.length ? list.map((c) => `<div class="srow cd"><span class="lday">${c.days === 0 ? 'Today' : c.days === 1 ? '1 day' : `${c.days} days`}</span><div><div class="st">${esc(c.title)}</div><div class="sm">${longDate(c.next)}${c.yearly ? ' · every year' : ''}</div></div><button class="rm" data-act="cd-remove" data-id="${esc(c.id)}" aria-label="Remove ${esc(c.title)}">Remove</button></div>`).join('')
+      : '<p class="empty">No countdowns yet.</p>';
+    openSheet(`<h2>Countdowns</h2><p class="sub">The two soonest show on the today strip.</p>${rows}`
+      + `<form class="cdform" id="cdform" autocomplete="off"><input name="title" maxlength="40" placeholder="Name, like Winter break" required><input name="date" type="date" min="${S.tkey}" required>`
+      + `<label class="yr"><input name="yearly" type="checkbox"> Every year</label><button class="tbtn add" type="submit">Add</button></form>`
+      + `<p class="foot err" id="cderr">${msg ? esc(msg) : ''}</p>`);
+  }
+
+  async function cdWrite(method, url, body) {
+    const r = await fetch(url, { method, headers: { 'content-type': 'application/json' }, body: body ? JSON.stringify(body) : undefined });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(j.error || `HTTP ${r.status}`);
+    return j;
+  }
+
+  async function cdChanged(msg) {
+    try { S.config = { ...S.config, countdowns: (await getJson('/api/config')).countdowns }; } catch (err) { console.warn(err); }
+    renderStrip();
+    openCountdowns(msg);
+  }
+
+  async function addCountdown(form) {
+    const f = new FormData(form);
+    try {
+      await cdWrite('POST', '/api/countdowns', { title: f.get('title'), date: f.get('date'), yearly: f.get('yearly') === 'on' });
+      await cdChanged();
+    } catch (err) { $('#cderr').textContent = `Couldn't add it: ${err.message}`; }
+  }
+
+  async function removeCountdown(id) {
+    try { await cdWrite('DELETE', `/api/countdowns/${encodeURIComponent(id)}`); await cdChanged(); } catch (err) { $('#cderr').textContent = `Couldn't remove it: ${err.message}`; }
+  }
+
   function scrollToday(smooth) {
     const ws = $('#weeks');
     ws.scrollTo({ top: ws.children[WEEKS_BEFORE].offsetTop, behavior: smooth ? 'smooth' : 'auto' });
@@ -428,6 +466,11 @@
     else if (a === 'weather') openWeather();
     else if (a === 'today') scrollToday(true);
     else if (a === 'night') nightToggle();
+    else if (a === 'countdowns') openCountdowns();
+    else if (a === 'cd-remove') removeCountdown(t.dataset.id);
+  });
+  document.addEventListener('submit', (e) => {
+    if (e.target.id === 'cdform') { e.preventDefault(); addCountdown(e.target); }
   });
   document.addEventListener('keydown', (e) => {
     poke();
