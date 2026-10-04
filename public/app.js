@@ -134,7 +134,7 @@
 
   function nextLunch(lu) {
     if (!lu || !lu.days || !lu.days.length) return null;
-    const afterLunch = new Date().getHours() >= 13;
+    const afterLunch = new Date().getHours() >= 10; // switch to the next school day at 10am
     const L = lu.days.find((d) => d.k > S.tkey || (d.k === S.tkey && !afterLunch));
     if (!L) return null;
     const off = offOf(parseKey(L.k));
@@ -164,7 +164,7 @@
     // One button per school, labeled with the school's name.
     $('#lunches').innerHTML = S.config.lunch.map((name, i) => {
       const lu = S.lunch && S.lunch[i], L = nextLunch(lu);
-      return `<button class="lunch" data-act="lunch" data-i="${i}">${FORK}<span><b>${esc((lu && lu.school) || name)}</b>${L ? `${L.when}: ${esc(L.entrees[0] || 'See menu')}` : 'Lunch menu'}</span></button>`;
+      return `<button class="lunch" data-act="lunch" data-i="${i}">${FORK}<span><b>${esc((lu && lu.school) || name)}</b><em>${L ? `${L.when}: ${esc(L.entrees[0] || 'See menu')}` : 'Lunch menu'}</em></span></button>`;
     }).join('');
   }
 
