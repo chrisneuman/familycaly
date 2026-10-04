@@ -1,16 +1,22 @@
+# Works with `docker compose up -d --build` in this folder, and as a Portainer
+# stack pointed at the Git repo. In Portainer, set CONFIG_PATH to the host folder
+# that holds family.json and photos/, because Portainer's own copy of the repo
+# doesn't have them (they're never committed).
 services:
   family-calendar:
     build: .
+    pull_policy: build          # rebuild from the repo on every redeploy
+    image: family-calendar:latest
     container_name: family-calendar
     restart: unless-stopped
     ports:
-      - "8080:8080"
+      - "${PORT:-8080}:8080"
     environment:
-      TZ: America/Chicago
+      TZ: ${TZ:-America/Chicago}
       # DEMO: "1"   # uncomment to show sample data instead of your calendars
     volumes:
-      - ./config:/config:ro
-      - calendar-data:/data   # countdowns added on the screen
+      - ${CONFIG_PATH:-./config}:/config:ro
+      - calendar-data:/data      # countdowns added on the screen
 
 volumes:
   calendar-data:
