@@ -10,3 +10,7 @@ services:
       # DEMO: "1"   # uncomment to show sample data instead of your calendars
     volumes:
       - ./config:/config:ro
+      - calendar-data:/data   # countdowns added on the screen
+
+volumes:
+  calendar-data:

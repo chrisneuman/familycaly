@@ -19,6 +19,7 @@
   const PAW = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><ellipse cx="12" cy="16" rx="5" ry="4.3"/><ellipse cx="5.4" cy="10.4" rx="2.1" ry="2.6"/><ellipse cx="9.5" cy="6.3" rx="2.1" ry="2.7"/><ellipse cx="14.5" cy="6.3" rx="2.1" ry="2.7"/><ellipse cx="18.6" cy="10.4" rx="2.1" ry="2.6"/></svg>';
   const FORK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3v7a2 2 0 0 0 4 0V3M8 12v9M17 21V3c-2 0-3.5 2.5-3.5 6s1.5 4 3.5 4"/></svg>';
   const CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+  const MOON = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.5 14.6A8.5 8.5 0 0 1 9.4 3.5a8.5 8.5 0 1 0 11.1 11.1z"/></svg>';
   const WXL = { sun: 'Sunny', partly: 'Partly cloudy', cloud: 'Cloudy', rain: 'Rain', snow: 'Snow', storm: 'Storms' };
 
   function wxIcon(c, s) {
@@ -141,13 +142,49 @@
     return { ...L, when: off === 0 ? 'Today' : off === 1 ? 'Tomorrow' : DOWL[parseKey(L.k).getDay()] };
   }
 
-  function countdowns() {
-    return (S.config.countdowns || []).map((c) => {
-      let d = parseKey(c.date);
-      if (c.yearly !== false && d < S.today) d.setFullYear(d.getFullYear() + 1);
-      return { title: c.title, days: offOf(d) };
-    }).filter((c) => c.days >= 0).sort((a, b) => a.days - b.days).slice(0, 2);
+  /** Short weather heads-ups for the Today strip, most useful first. */
+  function weatherTips() {
+    const w = S.weather;
+    if (!w) return [];
+    const F = S.config.units !== 'celsius';
+    const cold = F ? 40 : 4, hot = F ? 88 : 31, swing = F ? 25 : 14;
+    const hr = new Date().getHours(), tips = [];
+    const at = (h) => `${fmtTime(h)}m`; // 3p -> 3pm
+    if (hr < 18) {
+      // Rest of today, until 9pm.
+      const rest = (w.hourly || []).filter((h, i) => i === 0 || (h.h > `${pad(hr)}:00` && h.h <= '21:00'));
+      const wet = rest.find((h) => h.p >= 50 && (h.c === 'rain' || h.c === 'snow' || h.c === 'storm')) || rest.find((h) => h.p >= 60);
+      if (wet) {
+        const when = wet === rest[0] ? 'now' : `around ${at(wet.h)}`;
+        tips.push(wet.c === 'snow' ? { t: `Snow ${when}`, s: 'Boots and gloves today' }
+          : wet.c === 'storm' ? { t: `Storms ${when}`, s: `${wet.p}% chance. Plan to stay inside` }
+          : { t: `Rain ${when}`, s: `${wet.p}% chance. Grab a jacket or umbrella` });
+      }
+      const t = S.wxByKey[S.tkey];
+      const low = Math.min(...rest.map((h) => h.t));
+      if (rest.length && low <= cold) tips.push({ t: `Cold, down to ${low}°`, s: 'Wear a warm coat' });
+      else if (t && t.hi >= hot) tips.push({ t: `Hot, up to ${t.hi}°`, s: 'Bring water and find shade' });
+      else if (t && t.hi - t.lo >= swing && hr < 11) tips.push({ t: `${t.lo}° to ${t.hi}° today`, s: 'Dress in layers' });
+      if (t && t.uv >= 7 && hr < 15) tips.push({ t: `High UV (${t.uv})`, s: 'Sunscreen for outdoor time' });
+    } else {
+      // Evening: get ready for tomorrow.
+      const k = key(addDays(S.today, 1)), m = S.wxByKey[k];
+      if (m && m.p >= 50 && m.c !== 'sun') tips.push(m.c === 'snow' ? { t: 'Snow tomorrow', s: `${m.p}% chance. Set out boots and gloves` }
+        : { t: m.c === 'storm' ? 'Storms tomorrow' : 'Rain tomorrow', s: `${m.p}% chance. Set out rain gear tonight` });
+      if (m && m.lo <= cold) tips.push({ t: `Cold morning, ${m.lo}°`, s: 'Lay out coats tonight' });
+    }
+    return tips.slice(0, 2);
   }
+
+  /** Every countdown with its next date, soonest first. Past one-time dates drop off. */
+  function allCountdowns() {
+    return (S.config.countdowns || []).map((c) => {
+      const d = parseKey(c.date);
+      if (c.yearly !== false) while (d < S.today) d.setFullYear(d.getFullYear() + 1);
+      return { ...c, next: d, days: offOf(d) };
+    }).filter((c) => c.days >= 0).sort((a, b) => a.days - b.days);
+  }
+  const countdowns = () => allCountdowns().slice(0, 2);
 
   // ---- rendering --------------------------------------------------------------
 
@@ -180,9 +217,11 @@
     const l = todayList();
     let h = l.map(({ e, s }) => `<div class="card ${s}" data-eid="${e.id}" style="--cbg:${solid(e)};--cink:${ink(e)}"><span class="st">${multi(e)}${lab[s]}</span><span class="tm">${e.start ? fmtTime(e.start) : 'All day'}</span><span class="ti">${esc(e.title)}</span><span class="who">${esc(names(e))}</span></div>`).join('');
     if (!l.length) h = '<div class="card extra"><span class="st">Today</span><span class="tm">All clear</span><span class="who">Nothing on the calendar for the people shown</span></div>';
+    for (const x of weatherTips()) h += `<div class="card extra tip" data-act="weather"><span class="st">Heads up</span><span class="tm">${esc(x.t)}</span><span class="who">${esc(x.s)}</span></div>`;
     const dinner = S.meals[S.tkey];
     if (dinner) h += `<div class="card extra"><span class="st">Dinner tonight</span><span class="tm">${esc(dinner)}</span><span class="who">From the Meals calendar</span></div>`;
-    for (const c of countdowns()) h += `<div class="card extra"><span class="st">Countdown</span><span class="tm">${c.days === 0 ? 'Today!' : c.days === 1 ? '1 day' : `${c.days} days`}</span><span class="ti">until ${esc(c.title)}</span></div>`;
+    for (const c of countdowns()) h += `<div class="card extra" data-act="countdowns"><span class="st">Countdown</span><span class="tm">${c.days === 0 ? 'Today!' : c.days === 1 ? '1 day' : `${c.days} days`}</span><span class="ti">until ${esc(c.title)}</span></div>`;
+    h += '<button class="card add" data-act="countdowns" aria-label="Add or remove countdowns"><span>+</span>Countdown</button>';
     $('#strip').innerHTML = h;
   }
 
@@ -256,6 +295,7 @@
     const ap = h < 12 ? 'AM' : 'PM';
     h = h % 12 || 12;
     $('#clock').textContent = `${h}:${pad(d.getMinutes())} ${ap}`;
+    $('#nclock').textContent = `${h}:${pad(d.getMinutes())}`;
   }
 
   // ---- sheets -----------------------------------------------------------------
@@ -293,7 +333,7 @@
     const extras = [`Feels like ${c.feels}°`, `Wind ${c.wind}`];
     if (c.humidity != null) extras.push(`Humidity ${c.humidity}%`);
     const sun = t.sunrise ? `<p class="foot">Sunrise ${fmtTime(t.sunrise)} · Sunset ${fmtTime(t.sunset)}${t.uv ? ` · UV index ${t.uv}` : ''}</p>` : '';
-    const hours = (w.hourly || []).map((h, i) => `<div class="hr"><span class="hh">${i === 0 ? 'Now' : fmtTime(h.h)}</span>${wxIcon(h.c, '1.75rem')}<b>${h.t}°</b><span class="hp">${h.p >= 10 ? `${h.p}%` : ''}</span></div>`).join('');
+    const hours = (w.hourly || []).slice(0, 12).map((h, i) => `<div class="hr"><span class="hh">${i === 0 ? 'Now' : fmtTime(h.h)}</span>${wxIcon(h.c, '1.75rem')}<b>${h.t}°</b><span class="hp">${h.p >= 10 ? `${h.p}%` : ''}</span></div>`).join('');
     const days = w.daily.filter((d) => d.k >= S.tkey).slice(0, 10);
     const lo = Math.min(...days.map((d) => d.lo)), hi = Math.max(...days.map((d) => d.hi)), span = Math.max(1, hi - lo);
     const rows = days.map((d) => {
@@ -303,8 +343,44 @@
     }).join('');
     openSheet(`<h2>${c.t}° ${WXL[c.c] || ''}</h2><p class="sub">${esc(S.config.location || '')} · High ${t.hi}° · Low ${t.lo}°</p>`
       + `<p class="wmeta">${extras.map(esc).join(' · ')}</p>`
+      + weatherTips().map((x) => `<p class="wtip"><b>${esc(x.t)}.</b> ${esc(x.s)}.</p>`).join('')
       + (hours ? `<div class="hours">${hours}</div>` : '')
       + `<div class="wdays">${rows}</div>${sun}<p class="foot">Percentages are the chance of rain. From Open-Meteo, refreshed every 15 minutes.</p>`);
+  }
+
+  function openCountdowns(msg) {
+    const list = allCountdowns();
+    const rows = list.length ? list.map((c) => `<div class="srow cd"><span class="lday">${c.days === 0 ? 'Today' : c.days === 1 ? '1 day' : `${c.days} days`}</span><div><div class="st">${esc(c.title)}</div><div class="sm">${longDate(c.next)}${c.yearly ? ' · every year' : ''}</div></div><button class="rm" data-act="cd-remove" data-id="${esc(c.id)}" aria-label="Remove ${esc(c.title)}">Remove</button></div>`).join('')
+      : '<p class="empty">No countdowns yet.</p>';
+    openSheet(`<h2>Countdowns</h2><p class="sub">The two soonest show on the today strip.</p>${rows}`
+      + `<form class="cdform" id="cdform" autocomplete="off"><input name="title" maxlength="40" placeholder="Name, like Winter break" required><input name="date" type="date" min="${S.tkey}" required>`
+      + `<label class="yr"><input name="yearly" type="checkbox"> Every year</label><button class="tbtn add" type="submit">Add</button></form>`
+      + `<p class="foot err" id="cderr">${msg ? esc(msg) : ''}</p>`);
+  }
+
+  async function cdWrite(method, url, body) {
+    const r = await fetch(url, { method, headers: { 'content-type': 'application/json' }, body: body ? JSON.stringify(body) : undefined });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(j.error || `HTTP ${r.status}`);
+    return j;
+  }
+
+  async function cdChanged(msg) {
+    try { S.config = { ...S.config, countdowns: (await getJson('/api/config')).countdowns }; } catch (err) { console.warn(err); }
+    renderStrip();
+    openCountdowns(msg);
+  }
+
+  async function addCountdown(form) {
+    const f = new FormData(form);
+    try {
+      await cdWrite('POST', '/api/countdowns', { title: f.get('title'), date: f.get('date'), yearly: f.get('yearly') === 'on' });
+      await cdChanged();
+    } catch (err) { $('#cderr').textContent = `Couldn't add it: ${err.message}`; }
+  }
+
+  async function removeCountdown(id) {
+    try { await cdWrite('DELETE', `/api/countdowns/${encodeURIComponent(id)}`); await cdChanged(); } catch (err) { $('#cderr').textContent = `Couldn't remove it: ${err.message}`; }
   }
 
   function scrollToday(smooth) {
@@ -322,10 +398,60 @@
     refreshEvents(before);
   }
 
+  // ---- night mode ---------------------------------------------------------------
+  // On a schedule the screen dims at night.dim, goes nearly black at night.dark and
+  // comes back at night.wake. The moon button turns night mode on (dark right away)
+  // or off, until the next wake time. A touch lights the screen back up until it has
+  // been left alone for IDLE_MS.
+
+  const N = { mode: 'auto', until: 0, awake: false, level: 'day' };
+  const mins = (hm) => { const [h, m] = hm.split(':').map(Number); return h * 60 + m; };
+  const inSpan = (m, a, b) => (a <= b ? m >= a && m < b : m >= a || m < b);
+  const wakeAt = () => (S.config.night ? S.config.night.wake : '06:00');
+
+  function scheduled() {
+    const n = S.config && S.config.night;
+    if (!n) return 'day';
+    const d = new Date(), m = d.getHours() * 60 + d.getMinutes();
+    if (inSpan(m, mins(n.dark), mins(n.wake))) return 'dark';
+    if (inSpan(m, mins(n.dim), mins(n.wake))) return 'dim';
+    return 'day';
+  }
+
+  function nextWake() {
+    const d = new Date(), w = mins(wakeAt());
+    const t = new Date(d.getFullYear(), d.getMonth(), d.getDate(), Math.floor(w / 60), w % 60);
+    if (t <= d) t.setDate(t.getDate() + 1);
+    return t.getTime();
+  }
+
+  function nightLevel() {
+    if (N.mode !== 'auto' && Date.now() >= N.until) N.mode = 'auto';
+    return N.mode === 'on' ? 'dark' : N.mode === 'off' ? 'day' : scheduled();
+  }
+
+  function applyNight() {
+    const level = nightLevel();
+    N.level = N.awake ? 'day' : level;
+    $('#night').className = `night ${N.level}`;
+    const b = $('#moonbtn'), on = level !== 'day';
+    b.hidden = false;
+    b.classList.toggle('on', on);
+    b.innerHTML = `${MOON}<span>${on ? 'Night mode on' : 'Night mode'}</span>`;
+  }
+
+  function nightToggle() {
+    N.mode = nightLevel() === 'dark' ? 'off' : 'on'; // day or dim: go dark now; dark: turn it off
+    N.until = nextWake();
+    N.awake = false;
+    applyNight();
+  }
+
   let idleTimer;
   function poke() {
     clearTimeout(idleTimer);
-    idleTimer = setTimeout(() => { closeSheet(); scrollToday(true); }, IDLE_MS);
+    if (N.level !== 'day') { N.awake = true; applyNight(); }
+    idleTimer = setTimeout(() => { closeSheet(); scrollToday(true); N.awake = false; applyNight(); }, IDLE_MS);
   }
 
   document.addEventListener('click', (e) => {
@@ -339,6 +465,12 @@
     else if (a === 'lunch') openLunch(Number(t.dataset.i));
     else if (a === 'weather') openWeather();
     else if (a === 'today') scrollToday(true);
+    else if (a === 'night') nightToggle();
+    else if (a === 'countdowns') openCountdowns();
+    else if (a === 'cd-remove') removeCountdown(t.dataset.id);
+  });
+  document.addEventListener('submit', (e) => {
+    if (e.target.id === 'cdform') { e.preventDefault(); addCountdown(e.target); }
   });
   document.addEventListener('keydown', (e) => {
     poke();
@@ -346,6 +478,10 @@
     if ((e.key === 'Enter' || e.key === ' ') && e.target.matches && e.target.matches('[role="button"][data-act]')) { e.preventDefault(); e.target.click(); }
   });
   document.addEventListener('pointerdown', poke, { passive: true });
+  // A tap on the dark screen only wakes it; it shouldn't also open whatever is underneath.
+  let swallow = false;
+  document.addEventListener('pointerdown', () => { swallow = N.level === 'dark'; }, true);
+  document.addEventListener('click', (e) => { if (swallow) { swallow = false; e.stopPropagation(); e.preventDefault(); } }, true);
 
   // ---- boot -------------------------------------------------------------------
 
@@ -364,6 +500,7 @@
     setToday();
     await Promise.all([loadEvents(), loadWeather(), loadLunch()]);
     renderAll(true);
+    applyNight();
     $('#app').classList.remove('loading');
     $('#weeks').addEventListener('scroll', updMonth, { passive: true });
 
@@ -371,7 +508,7 @@
     setInterval(async () => { await loadWeather(); renderHeader(); renderWeeks(); renderStatus(); }, REFRESH.weather);
     setInterval(async () => { await loadLunch(); renderHeader(); }, REFRESH.lunch);
     setInterval(() => {
-      tick();
+      tick(); applyNight();
       const n = new Date();
       if (key(n) !== S.tkey) { setToday(); Promise.all([loadEvents(), loadWeather(), loadLunch()]).then(() => renderAll(true)); }
       else if (n.getSeconds() < 15) renderStrip(); // move "Up next" along once a minute

@@ -48,8 +48,8 @@ async function loadWeather({ latitude, longitude }, units) {
       wind: `${Math.round(c.wind_speed_10m)} ${metric ? 'km/h' : 'mph'} ${COMPASS[Math.round(c.wind_direction_10m / 45) % 8]}`,
       humidity: Math.round(c.relative_humidity_2m),
     },
-    // Next 12 hours, starting with the current hour. Times are local (timezone=auto).
-    hourly: nextHours(j.hourly, c.time, 12),
+    // Next 24 hours, starting with the current hour. Times are local (timezone=auto).
+    hourly: nextHours(j.hourly, c.time, 24),
     daily: j.daily.time.map((date, i) => ({
       k: date,
       hi: Math.round(j.daily.temperature_2m_max[i]),

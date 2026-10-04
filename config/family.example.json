@@ -4,9 +4,9 @@
   "location": { "name": "Sun Prairie, WI", "latitude": 43.18, "longitude": -89.21 },
 
   "people": [
-    { "id": "chris", "name": "Chris", "color": "#3d6bff", "photo": "chris.jpg",
+    { "id": "chris", "name": "Chris", "color": "#3d6bff",
       "ical": "https://calendar.google.com/calendar/ical/REPLACE/private-REPLACE/basic.ics" },
-    { "id": "person2", "name": "Name", "color": "#e8457a", "photo": "person2.jpg",
+    { "id": "person2", "name": "Name", "color": "#e8457a",
       "ical": "https://calendar.google.com/calendar/ical/REPLACE/private-REPLACE/basic.ics" },
     { "id": "person3", "name": "Name", "color": "#8c5cf0",
       "ical": "https://calendar.google.com/calendar/ical/REPLACE/private-REPLACE/basic.ics" },
@@ -24,6 +24,8 @@
     { "district": "sunprairie", "school": "northside", "schoolName": "Northside", "menuType": "lunch" },
     { "district": "sunprairie", "school": "cardinal-heights-upper-middle", "schoolName": "Central Heights", "menuType": "lunch" }
   ],
+
+  "night": { "dim": "21:00", "dark": "23:00", "wake": "06:00" },
 
   "countdowns": [
     { "title": "Halloween", "date": "2026-10-31" },

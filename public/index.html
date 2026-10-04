@@ -20,10 +20,12 @@
       <div class="month" id="month"></div>
       <span class="status" id="status" hidden></span>
       <button class="tbtn" data-act="today">Jump to today</button>
+      <button class="tbtn moon" id="moonbtn" data-act="night" aria-label="Night mode" hidden></button>
     </div>
     <div class="dow" id="dow"></div>
     <div class="weeks" id="weeks"></div>
   </div>
+  <div class="night" id="night" data-act="wake" aria-hidden="true"><b id="nclock"></b></div>
   <div class="sheet-wrap" id="sheet" data-act="close" hidden><div class="sheet" role="dialog" aria-modal="true"></div></div>
 </div>
 <script src="app.js"></script>

@@ -66,6 +66,8 @@ async function loadEvents(calendars, fromKey, toKey) {
     for (const piece of splitByDay(ev, from, to)) out.push({ id: `e${n++}`, ...piece });
   }
   out.sort((a, b) => a.k.localeCompare(b.k) || (a.start || '').localeCompare(b.start || ''));
+  // Labels and messages only: an error never includes the private calendar address.
+  for (const e of errors) console.warn(`[calendar] ${e}`);
   return { events: out, errors };
 }
 

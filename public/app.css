@@ -48,6 +48,10 @@ button,[role="button"]{background:none;border:0;padding:0;margin:0;font:inherit;
 .av svg{width:1.75rem;height:1.75rem}
 .ck{position:absolute;top:-.3125rem;right:-.3125rem;width:1.25rem;height:1.25rem;border-radius:50%;background:var(--ink);color:#fff;display:grid;place-items:center;box-shadow:0 0 0 .125rem var(--bg);transition:transform .2s}
 .ck svg{width:.75rem;height:.75rem}
+.pp .nm{background:var(--c);color:var(--pi,#fff);border-radius:999px;padding:.125rem .5rem;line-height:1.3;transition:background-color .2s}
+.av:has(img){box-shadow:0 0 0 .1875rem var(--c)}
+.pp.off .nm{background:#c8cedb;color:#fff}
+.pp.off .av:has(img){box-shadow:none}
 .pp.off{opacity:.55}
 .pp.off .av{background-color:#c8cedb;color:#fff;transform:scale(.86)}
 .pp.off .av img{filter:grayscale(1) opacity(.6)}
@@ -139,3 +143,32 @@ button,[role="button"]{background:none;border:0;padding:0;margin:0;font:inherit;
   .week.cur{height:auto;min-height:max(25%,7rem)}
 }
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+
+/* night mode */
+.night{position:fixed;inset:0;z-index:40;background:#000;opacity:0;pointer-events:none;transition:opacity 1.2s ease;display:grid;place-items:center}
+.night.dim{opacity:.55}
+.night.dark{opacity:.94;pointer-events:auto}
+.night b{font-family:var(--display);font-weight:700;font-size:7rem;color:#fff;opacity:0;transition:opacity 1.2s ease;font-variant-numeric:tabular-nums}
+.night.dark b{opacity:.22}
+.moon{margin-left:0;display:flex;align-items:center;gap:.4rem}
+.moon svg{width:1rem;height:1rem}
+.moon.on{background:#1f2540;color:#fff}
+
+/* weather heads-ups */
+.card.tip{cursor:pointer}
+.card.tip .st{color:#1f7ae0}
+.wtip{margin:0 0 .5rem;padding:.5rem .75rem;border-radius:.75rem;background:var(--bg)}
+
+/* countdowns */
+.card.add{width:auto;min-width:6rem;align-items:center;justify-content:center;background:transparent;color:var(--muted);box-shadow:inset 0 0 0 .09rem var(--line);font-weight:700;font-size:.8125rem;cursor:pointer}
+.card.add span{font-size:1.75rem;line-height:1;color:var(--accent)}
+.card.extra[data-act]{cursor:pointer}
+.srow.cd{grid-template-columns:auto minmax(0,1fr) auto}
+.rm{background:var(--bg);border-radius:999px;padding:.4rem .8rem;font-weight:700;font-size:.8125rem;color:#c0264b}
+.cdform{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;margin-top:1rem;padding-top:1rem;border-top:.09rem solid var(--line)}
+.cdform input[name=title]{flex:1 1 12rem}
+.cdform input[name=title],.cdform input[type=date]{font:inherit;font-size:1rem;padding:.6rem .8rem;border-radius:.75rem;border:.09rem solid var(--line);background:var(--bg);color:var(--fg)}
+.cdform .yr{display:flex;align-items:center;gap:.35rem;font-weight:600;font-size:.875rem}
+.cdform .yr input{width:1.2rem;height:1.2rem}
+.cdform .add{margin-left:0;background:var(--accent);color:#fff}
+.err{color:#c0264b}
