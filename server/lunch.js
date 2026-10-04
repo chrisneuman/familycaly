@@ -16,16 +16,26 @@ function weekUrl({ district, school, menuType }, d) {
 function parseDay(day) {
   const sections = [];
   let current = { title: '', items: [] };
+  let joinNext = false;
   for (const item of day.menu_items || []) {
     if (item.is_section_title) {
       if (current.items.length) sections.push(current);
       current = { title: String(item.text || '').trim(), items: [] };
+      joinNext = false;
       continue;
     }
-    const name = item.food && item.food.name ? String(item.food.name).trim() : String(item.text || '').trim();
+    // Text-only rows ("With", "or", blank) sit between dishes. "With" joins
+    // the next dish onto the one before it; the rest are skipped.
+    if (!item.food) {
+      if (/^with\b/i.test(String(item.text || '').trim()) && current.items.length) joinNext = true;
+      continue;
+    }
+    const name = String(item.food.name || '').trim();
     if (!name) continue;
-    const category = item.food && item.food.food_category;
-    current.items.push({ name, category });
+    const prev = current.items[current.items.length - 1];
+    if (joinNext && prev) prev.name += ` with ${name}`;
+    else current.items.push({ name, category: item.food.food_category });
+    joinNext = false;
   }
   if (current.items.length) sections.push(current);
 

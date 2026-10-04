@@ -65,11 +65,9 @@ const getEvents = cached(4 * MIN, async ({ from, to }) => {
   return { ...ev, meals };
 });
 const getWeather = cached(15 * MIN, () => (DEMO ? demo.weather() : loadWeather(config.location, config.units)));
-const getLunch = cached(60 * MIN, () => {
-  if (DEMO) return demo.lunch();
-  if (!config.lunch) return null;
-  return loadLunch(config.lunch);
-});
+// `lunch` can be one school or a list of them.
+const schools = [].concat(config.lunch || []);
+const getLunch = cached(60 * MIN, (i) => (DEMO ? demo.lunch(i) : loadLunch(schools[i])));
 
 // ---- http ------------------------------------------------------------------
 
@@ -97,7 +95,7 @@ function serveFile(res, root, rel) {
   if (!file.startsWith(root + path.sep)) return send(res, 404, { error: 'not found' });
   fs.readFile(file, (err, buf) => {
     if (err) return send(res, 404, { error: 'not found' });
-    send(res, 200, buf, TYPES[path.extname(file).toLowerCase()] || 'application/octet-stream', { 'cache-control': 'max-age=300' });
+    send(res, 200, buf, TYPES[path.extname(file).toLowerCase()] || 'application/octet-stream', { 'cache-control': 'no-cache' });
   });
 }
 
@@ -116,7 +114,7 @@ async function api(route, q) {
       people,
       location: config.location.name,
       countdowns: config.countdowns || [],
-      lunch: Boolean(config.lunch),
+      lunch: schools.map((c) => c.schoolName || c.school),
       today: dayKey(new Date()),
     };
   }
@@ -129,7 +127,15 @@ async function api(route, q) {
     return { ...r.data, stale: r.stale };
   }
   if (route === 'weather') { const r = await getWeather(); return { ...r.data, stale: r.stale }; }
-  if (route === 'lunch') { const r = await getLunch(); return r.data ? { ...r.data, stale: r.stale } : null; }
+  if (route === 'lunch') {
+    // One school failing shouldn't hide the others' menus.
+    const results = await Promise.allSettled(schools.map((_, i) => getLunch(i)));
+    return {
+      schools: results.map((r, i) => (r.status === 'fulfilled'
+        ? { ...r.value.data, stale: r.value.stale }
+        : { school: schools[i].schoolName || schools[i].school, days: [], failed: true })),
+    };
+  }
   return undefined;
 }
 

@@ -15,7 +15,10 @@ const config = {
     { id: 'leo', name: 'Leo', color: '#108c5c' },
     { id: 'maple', name: 'Maple', color: '#f2a93b', dog: true },
   ],
-  lunch: { district: 'sunprairie', school: 'cardinal-heights-upper-middle', schoolName: 'Cardinal Heights Upper Middle', menuType: 'lunch' },
+  lunch: [
+    { district: 'sunprairie', school: 'northside', schoolName: 'Northside', menuType: 'lunch' },
+    { district: 'sunprairie', school: 'cardinal-heights-upper-middle', schoolName: 'Central Heights', menuType: 'lunch' },
+  ],
   countdowns: [{ title: 'Halloween', date: `${new Date().getFullYear()}-10-31` }],
 };
 
@@ -76,22 +79,26 @@ function meals(fromKey, toKey) {
 }
 
 const WX = [[62, 44, 'partly', 10], [66, 48, 'sun', 0], [58, 46, 'rain', 80], [54, 40, 'cloud', 30], [57, 38, 'sun', 0], [61, 45, 'partly', 10], [63, 50, 'rain', 60], [55, 41, 'cloud', 20], [52, 36, 'sun', 0], [56, 39, 'partly', 10]];
+const HOURLY = [[58, 'partly', 10], [60, 'partly', 10], [61, 'sun', 0], [62, 'sun', 0], [61, 'sun', 0], [59, 'partly', 5], [56, 'cloud', 15], [53, 'cloud', 20], [51, 'cloud', 25], [49, 'rain', 40], [48, 'rain', 55], [47, 'rain', 60]];
 function weather() {
+  const h0 = new Date().getHours();
   return {
-    current: { t: 58, feels: 55, c: 'partly', wind: '8 mph NW' },
-    daily: WX.map(([hi, lo, c, p], i) => ({ k: dayKey(addDays(today(), i)), hi, lo, c, p })),
+    current: { t: 58, feels: 55, c: 'partly', wind: '8 mph NW', humidity: 62 },
+    hourly: HOURLY.map(([t, c, p], i) => ({ h: `${String((h0 + i) % 24).padStart(2, '0')}:00`, t, c, p })),
+    daily: WX.map(([hi, lo, c, p], i) => ({ k: dayKey(addDays(today(), i)), hi, lo, c, p, sunrise: '07:04', sunset: '18:26', uv: [4, 5, 2, 3, 5, 4, 2, 3, 4, 4][i] })),
   };
 }
 
 const MENU = [['Chicken tenders', 'Mashed potatoes, green beans, apple'], ['Cheese pizza', 'Caesar salad, baby carrots, pear'], ['Beef tacos', 'Black beans, corn, salsa, orange'], ['Pancakes & sausage', 'Hash browns, strawberries, yogurt'], ['Orange chicken', 'Brown rice, broccoli, mandarin'], ['Mac & cheese', 'Peas, garlic toast, banana'], ['Cheeseburger', 'Sweet potato fries, cucumbers, grapes'], ['Chicken quesadilla', 'Spanish rice, pinto beans, kiwi'], ['Spaghetti & meatballs', 'Breadstick, side salad, applesauce'], ['Turkey & cheese sub', 'Chips, celery sticks, watermelon']];
-function lunch() {
+function lunch(n = 0) {
+  const school = config.lunch[n];
   const days = [];
-  for (let d = today(), i = 0; days.length < 10; d = addDays(d, 1)) {
+  for (let d = today(), i = n * 3; days.length < 10; d = addDays(d, 1)) {
     if (d.getDay() === 0 || d.getDay() === 6) continue;
     const [e, s] = MENU[i++ % MENU.length];
     days.push({ k: dayKey(d), entrees: [e], sides: s.split(', ') });
   }
-  return { school: config.lunch.schoolName, url: 'https://sunprairie.nutrislice.com/menu/cardinal-heights-upper-middle/lunch/', days };
+  return { school: school.schoolName, url: `https://sunprairie.nutrislice.com/menu/${school.school}/lunch/`, days };
 }
 
 module.exports = { config, events, meals, weather, lunch };
