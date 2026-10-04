@@ -95,7 +95,7 @@ function serveFile(res, root, rel) {
   if (!file.startsWith(root + path.sep)) return send(res, 404, { error: 'not found' });
   fs.readFile(file, (err, buf) => {
     if (err) return send(res, 404, { error: 'not found' });
-    send(res, 200, buf, TYPES[path.extname(file).toLowerCase()] || 'application/octet-stream', { 'cache-control': 'max-age=300' });
+    send(res, 200, buf, TYPES[path.extname(file).toLowerCase()] || 'application/octet-stream', { 'cache-control': 'no-cache' });
   });
 }
 
