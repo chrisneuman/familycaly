@@ -1,5 +1,10 @@
 node_modules/
 config/family.json
+# any other settings file or backup in config/ may hold private calendar links
+config/*.json
+config/*.bak
+!config/family.example.json
 config/photos/*
 !config/photos/.gitkeep
 data/
+.DS_Store
