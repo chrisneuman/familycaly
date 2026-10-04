@@ -192,10 +192,11 @@
     const maxChips = matchMedia('(orientation: portrait)').matches ? 6 : 3;
     let h = '';
     for (let w = 0; w < NWEEKS; w++) {
-      h += '<div class="week">';
+      const cur = w === WEEKS_BEFORE; // this week shows every event; its row grows to fit
+      h += `<div class="week${cur ? ' cur' : ''}">`;
       for (let i = 0; i < 7; i++) {
         const d = addDays(S.start, w * 7 + i), k = key(d), off = offOf(d);
-        const list = (S.events[k] || []).filter(isOn), shown = list.slice(0, maxChips), more = list.length - shown.length;
+        const list = (S.events[k] || []).filter(isOn), shown = cur ? list : list.slice(0, maxChips), more = list.length - shown.length;
         const cls = `day${off === 0 ? ' today' : ''}${off < 0 ? ' past' : ''}`;
         h += `<div class="${cls}" role="button" tabindex="0" data-act="day" data-k="${k}" aria-label="${longDate(d)}, ${list.length} events">`
           + `<div class="dh"><span class="dn">${d.getDate() === 1 ? `${MON3[d.getMonth()]} ` : ''}${d.getDate()}</span>${wxSmall(k)}</div>`
