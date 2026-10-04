@@ -1,0 +1,111 @@
+/* Design B "Fridge". Sized in rem; the root font size scales with the screen,
+   so a 1920x1080 panel gets the same layout as the 1280x800 mockup, just larger. */
+:root{
+  --bg:#edf0f6; --panel:#ffffff; --fg:#141826; --muted:#5f6880; --line:#dde2ec;
+  --accent:#3d6bff; --ink:#141826; --sun:#ffc53d; --rain:#4ea3ff; --cloud:#b6c0d4; --lunch:#ffd23f;
+  --display:'Bricolage Grotesque','Figtree',system-ui,sans-serif;
+  color-scheme:light;
+  font-size:clamp(12px, min(1.25vw, 2vh), 30px);
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--fg);font-family:'Figtree',system-ui,-apple-system,sans-serif;overflow:hidden;-webkit-user-select:none;user-select:none;cursor:default}
+button,[role="button"]{background:none;border:0;padding:0;margin:0;font:inherit;color:inherit;cursor:pointer;text-align:left;-webkit-tap-highlight-color:transparent}
+:focus-visible{outline:.125rem solid var(--accent);outline-offset:.125rem}
+[hidden]{display:none!important}
+
+#app{height:100%;display:flex;flex-direction:column;gap:.75rem;padding:.875rem 1rem}
+#app.loading{opacity:0}
+#app{transition:opacity .4s ease}
+
+.top{display:flex;align-items:center;gap:.875rem 1.125rem;flex-wrap:wrap;flex:none}
+.dname{font-family:var(--display);font-weight:800;font-size:2.875rem;line-height:.95;letter-spacing:-.025em}
+.dsub{font-size:.9375rem;color:var(--muted);font-weight:500;margin-top:.25rem}
+.dsub b{color:var(--fg);font-variant-numeric:tabular-nums}
+.wxpill{display:flex;align-items:center;gap:.5rem;background:var(--panel);border-radius:999px;padding:.375rem 1rem .375rem .5rem;font-weight:600;font-size:.875rem}
+.wxpill b{font-family:var(--display);font-size:1.375rem}
+.wxpill span{color:var(--muted);font-weight:500}
+.lunch{background:var(--lunch);color:var(--ink);border-radius:999px;padding:.6875rem 1.125rem;font-weight:700;display:flex;align-items:center;gap:.5rem;font-size:.875rem}
+.lunch svg{width:1.25rem;height:1.25rem;flex:none}
+
+.people{display:flex;gap:.75rem;margin-left:auto}
+.pp{display:flex;flex-direction:column;align-items:center;gap:.3125rem;font-size:.75rem;font-weight:700;position:relative;transition:opacity .2s}
+.av{width:3.5rem;height:3.5rem;border-radius:1.1875rem;background:var(--c);color:var(--pi,#fff);display:grid;place-items:center;font-family:var(--display);font-weight:800;font-size:1.5625rem;overflow:hidden;transition:transform .28s cubic-bezier(.3,1.6,.5,1),background-color .2s}
+.av img{width:100%;height:100%;object-fit:cover;display:block;transition:filter .2s}
+.av svg{width:1.75rem;height:1.75rem}
+.ck{position:absolute;top:-.3125rem;right:-.3125rem;width:1.25rem;height:1.25rem;border-radius:50%;background:var(--ink);color:#fff;display:grid;place-items:center;box-shadow:0 0 0 .125rem var(--bg);transition:transform .2s}
+.ck svg{width:.75rem;height:.75rem}
+.pp.off{opacity:.55}
+.pp.off .av{background-color:#c8cedb;color:#fff;transform:scale(.86)}
+.pp.off .av img{filter:grayscale(1) opacity(.6)}
+.pp.off .ck{transform:scale(0)}
+
+.strip{flex:none;display:flex;gap:.625rem;overflow-x:auto;scrollbar-width:none;padding-bottom:.125rem}
+.strip::-webkit-scrollbar{display:none}
+.card{flex:none;width:12.25rem;min-height:6.25rem;border-radius:1.25rem;padding:.75rem .875rem;background:var(--cbg);color:var(--cink);display:flex;flex-direction:column;gap:.1875rem;transition:opacity .18s ease,transform .18s ease}
+.card .st{font-size:.6875rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;opacity:.85;display:flex;align-items:center;gap:.375rem}
+.card .tm{font-family:var(--display);font-weight:700;font-size:1.375rem;line-height:1.1}
+.card .ti{font-weight:600;font-size:.9375rem;line-height:1.2;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.card .who{font-size:.75rem;opacity:.85;margin-top:auto}
+.card.done{opacity:.42}
+.card.extra{background:var(--panel);color:var(--fg);box-shadow:inset 0 0 0 .09rem var(--line)}
+.card.extra .st{color:var(--accent);opacity:1}
+.card.extra .who{color:var(--muted)}
+
+.calwrap{flex:1;min-height:0;display:flex;flex-direction:column;background:var(--panel);border-radius:1.5rem;padding:.625rem .625rem 0}
+.calhead{display:flex;align-items:center;gap:.75rem;padding:.25rem .375rem .5rem}
+.month{font-family:var(--display);font-weight:700;font-size:1.375rem;letter-spacing:-.01em}
+.month span{color:var(--muted);font-weight:500}
+.status{font-size:.75rem;font-weight:600;color:#a15c00;background:#fff1d6;border-radius:999px;padding:.25rem .625rem}
+.tbtn{margin-left:auto;background:var(--bg);border-radius:999px;padding:.5625rem 1rem;font-weight:700;font-size:.875rem}
+
+.dow,.week{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:.375rem}
+.dow{padding:0 0 .375rem;font-size:.71875rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.dow span{padding-left:.5rem}
+.weeks{flex:1;min-height:0;overflow-y:auto;position:relative;scroll-snap-type:y proximity;overscroll-behavior:contain;scrollbar-width:none}
+.weeks::-webkit-scrollbar{display:none}
+.week{height:33.333%;min-height:7rem;padding-bottom:.375rem;scroll-snap-align:start}
+.day{min-width:0;overflow:hidden;display:flex;flex-direction:column;gap:.25rem;background:var(--bg);border-radius:.875rem;padding:.375rem}
+.day.past{opacity:.5}
+.day.today{background:var(--panel);box-shadow:inset 0 0 0 .125rem var(--ink)}
+.dh{display:flex;justify-content:space-between;align-items:center;gap:.25rem}
+.dn{font-weight:800;font-size:.875rem;min-width:1.625rem;height:1.625rem;padding:0 .375rem;display:grid;place-items:center;border-radius:999px;white-space:nowrap}
+.today .dn{background:var(--ink);color:#fff}
+.wxm{display:flex;align-items:center;gap:.125rem;font-size:.75rem;font-weight:600;color:var(--muted)}
+.evs{display:flex;flex-direction:column;gap:.25rem;min-width:0;overflow:hidden}
+.chip{flex:none;border-radius:.5rem;padding:.1875rem .4375rem;background:var(--cbg);color:var(--cink);font-size:.75rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:opacity .18s ease,transform .18s ease}
+.chip .tt{font-weight:500;opacity:.85;margin-right:.25rem}
+.more{font-size:.71875rem;font-weight:800;color:var(--muted);padding-left:.25rem}
+
+.dots{display:inline-flex;flex:none;vertical-align:-.0625rem}
+.dots i{width:.5rem;height:.5rem;border-radius:50%;display:block;box-shadow:0 0 0 .09rem var(--ring,#262b40)}
+.dots i+i{margin-left:-.1875rem}
+.chip .dots{margin-right:.25rem}
+.srow .dots i{width:.625rem;height:.625rem;--ring:var(--sheet-bg,#fff)}
+.wx{flex:none;display:block}
+
+.leaving{opacity:0!important;transform:scale(.94)}
+.entering{animation:pop .32s cubic-bezier(.2,.8,.2,1)}
+@keyframes pop{from{opacity:0;transform:translateY(.3rem) scale(.96)}to{opacity:1;transform:none}}
+
+.sheet-wrap{position:fixed;inset:0;z-index:30;display:flex;align-items:center;justify-content:center;padding:1.5rem;background:rgba(6,9,18,.45);animation:fade .2s ease}
+.sheet{position:relative;background:var(--panel);border-radius:1.5rem;width:min(36rem,100%);max-height:100%;overflow:auto;padding:1.625rem 1.625rem 1.125rem;box-shadow:0 1.875rem 5rem rgba(0,0,0,.3);animation:rise .28s cubic-bezier(.2,.8,.2,1)}
+.sheet h2{font-family:var(--display);font-size:1.625rem;margin:0 0 .25rem;letter-spacing:-.01em;padding-right:3rem}
+.sheet .sub{color:var(--muted);margin:0 0 .875rem;display:flex;align-items:center;gap:.5rem;flex-wrap:wrap}
+.sheet .x{position:absolute;top:.875rem;right:.875rem;width:2.75rem;height:2.75rem;border-radius:50%;display:grid;place-items:center;font-size:1.375rem;color:var(--muted)}
+.srow{display:grid;grid-template-columns:auto minmax(0,1fr);gap:.875rem;align-items:center;padding:.75rem 0;border-top:.0625rem solid var(--line)}
+.srow .st{font-weight:700;font-size:1rem}
+.srow .sm{color:var(--muted);font-size:.84375rem;margin-top:.125rem}
+.srow.hl .st::after{content:"Next up";margin-left:.5rem;font-size:.6875rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--accent)}
+.lday{font-size:.75rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);width:4rem}
+.foot{font-size:.78125rem;color:var(--muted);margin:.875rem 0 .25rem;line-height:1.5}
+.empty{color:var(--muted);font-size:.875rem;margin:.375rem 0}
+@keyframes fade{from{opacity:0}}
+@keyframes rise{from{opacity:0;transform:translateY(1rem) scale(.98)}}
+
+@media (orientation:portrait){
+  :root{font-size:clamp(12px, min(2vw, 1.4vh), 30px)}
+  .top .people{margin-left:0;width:100%;justify-content:center;gap:1.5rem}
+  .week{height:25%}
+}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}

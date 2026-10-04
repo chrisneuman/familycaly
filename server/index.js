@@ -1,0 +1,132 @@
+'use strict';
+
+const fs = require('fs');
+const path = require('path');
+const http = require('http');
+
+const CONFIG_DIR = path.resolve(process.env.CONFIG_DIR || path.join(__dirname, '..', 'config'));
+const PUBLIC_DIR = path.join(__dirname, '..', 'public');
+const PORT = Number(process.env.PORT || 8080);
+
+// ---- configuration -------------------------------------------------------
+
+const configPath = path.join(CONFIG_DIR, 'family.json');
+const DEMO = process.env.DEMO === '1' || process.argv.includes('--demo') || !fs.existsSync(configPath);
+const demo = require('./demo');
+const config = DEMO ? demo.config : JSON.parse(fs.readFileSync(configPath, 'utf8'));
+
+// Dates are bucketed into days on the server, so it must run in the family's timezone.
+if (config.timezone) process.env.TZ = config.timezone;
+
+const { cached, addDays, dayKey } = require('./util');
+const { loadEvents, loadMeals } = require('./calendar');
+const { loadWeather } = require('./weather');
+const { loadLunch } = require('./lunch');
+
+function inkFor(hex) {
+  const n = parseInt(hex.replace('#', ''), 16);
+  const [r, g, b] = [n >> 16, (n >> 8) & 255, n & 255].map((v) => {
+    const c = v / 255;
+    return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+  });
+  const L = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  return L > 0.36 ? '#1d1400' : '#ffffff';
+}
+
+const people = config.people.map((p) => ({
+  id: p.id,
+  name: p.name,
+  color: p.color,
+  ink: p.ink || inkFor(p.color),
+  dog: Boolean(p.dog),
+  photo: p.photo ? `/photos/${encodeURIComponent(p.photo)}` : null,
+}));
+
+const calendars = [];
+for (const p of config.people) {
+  for (const url of [].concat(p.ical || [])) calendars.push({ label: p.name, ical: url, people: [p.id] });
+}
+for (const c of config.sharedCalendars || []) calendars.push({ label: c.name || 'Shared', ical: c.ical, people: c.people });
+
+console.log(DEMO
+  ? `[config] demo mode (${fs.existsSync(configPath) ? 'requested' : `no ${configPath}`})`
+  : `[config] ${people.length} people, ${calendars.length} calendars`);
+
+// ---- data sources, cached --------------------------------------------------
+
+const MIN = 60 * 1000;
+const getEvents = cached(4 * MIN, async ({ from, to }) => {
+  if (DEMO) return { events: demo.events(from, to), meals: demo.meals(from, to), errors: [] };
+  const [ev, meals] = await Promise.all([
+    loadEvents(calendars, from, to),
+    config.meals && config.meals.ical ? loadMeals(config.meals.ical, from, to).catch(() => ({})) : {},
+  ]);
+  if (calendars.length && ev.errors.length === calendars.length) throw new Error(`all calendars failed: ${ev.errors.join('; ')}`);
+  return { ...ev, meals };
+});
+const getWeather = cached(15 * MIN, () => (DEMO ? demo.weather() : loadWeather(config.location, config.units)));
+const getLunch = cached(60 * MIN, () => {
+  if (DEMO) return demo.lunch();
+  if (!config.lunch) return null;
+  return loadLunch(config.lunch);
+});
+
+// ---- http ------------------------------------------------------------------
+
+const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml', '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.webp': 'image/webp', '.json': 'application/json' };
+
+function send(res, status, body, type = 'application/json', extra = {}) {
+  res.writeHead(status, { 'content-type': type, 'cache-control': 'no-store', ...extra });
+  res.end(type === 'application/json' ? JSON.stringify(body) : body);
+}
+
+function serveFile(res, root, rel) {
+  const file = path.join(root, path.normalize(rel).replace(/^([.][.][/\\])+/, ''));
+  if (!file.startsWith(root + path.sep)) return send(res, 404, { error: 'not found' });
+  fs.readFile(file, (err, buf) => {
+    if (err) return send(res, 404, { error: 'not found' });
+    send(res, 200, buf, TYPES[path.extname(file).toLowerCase()] || 'application/octet-stream', { 'cache-control': 'max-age=300' });
+  });
+}
+
+const isKey = (s) => typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s);
+
+async function api(route, q) {
+  if (route === 'config') {
+    return {
+      demo: DEMO,
+      people,
+      location: config.location.name,
+      countdowns: config.countdowns || [],
+      lunch: Boolean(config.lunch),
+      today: dayKey(new Date()),
+    };
+  }
+  if (route === 'events') {
+    const from = isKey(q.get('from')) ? q.get('from') : dayKey(addDays(new Date(), -7));
+    const to = isKey(q.get('to')) ? q.get('to') : dayKey(addDays(new Date(), 56));
+    const r = await getEvents({ from, to });
+    return { ...r.data, stale: r.stale };
+  }
+  if (route === 'weather') { const r = await getWeather(); return { ...r.data, stale: r.stale }; }
+  if (route === 'lunch') { const r = await getLunch(); return r.data ? { ...r.data, stale: r.stale } : null; }
+  return undefined;
+}
+
+const server = http.createServer(async (req, res) => {
+  const url = new URL(req.url, 'http://local');
+  try {
+    if (url.pathname === '/healthz') return send(res, 200, { ok: true });
+    if (url.pathname.startsWith('/api/')) {
+      const body = await api(url.pathname.slice(5), url.searchParams);
+      return body === undefined ? send(res, 404, { error: 'unknown endpoint' }) : send(res, 200, body);
+    }
+    if (url.pathname.startsWith('/photos/')) return serveFile(res, path.join(CONFIG_DIR, 'photos'), decodeURIComponent(url.pathname.slice(8)));
+    return serveFile(res, PUBLIC_DIR, url.pathname === '/' ? 'index.html' : url.pathname.slice(1));
+  } catch (err) {
+    console.error(`[${url.pathname}] ${err.message}`);
+    return send(res, 502, { error: err.message });
+  }
+});
+
+server.listen(PORT, () => console.log(`[http] family calendar on http://0.0.0.0:${PORT}`));

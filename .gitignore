@@ -1,0 +1,4 @@
+node_modules/
+config/family.json
+config/photos/*
+!config/photos/.gitkeep

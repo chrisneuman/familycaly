@@ -1,0 +1,12 @@
+services:
+  family-calendar:
+    build: .
+    container_name: family-calendar
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      TZ: America/Chicago
+      # DEMO: "1"   # uncomment to show sample data instead of your calendars
+    volumes:
+      - ./config:/config:ro
