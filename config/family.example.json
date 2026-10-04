@@ -20,12 +20,10 @@
 
   "meals": { "ical": "" },
 
-  "lunch": {
-    "district": "sunprairie",
-    "school": "cardinal-heights-upper-middle",
-    "schoolName": "Cardinal Heights Upper Middle",
-    "menuType": "lunch"
-  },
+  "lunch": [
+    { "district": "sunprairie", "school": "northside", "schoolName": "Northside", "menuType": "lunch" },
+    { "district": "sunprairie", "school": "cardinal-heights-upper-middle", "schoolName": "Central Heights", "menuType": "lunch" }
+  ],
 
   "countdowns": [
     { "title": "Halloween", "date": "2026-10-31" },

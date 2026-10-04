@@ -110,8 +110,11 @@
     } catch (err) { S.failed.weather = true; console.warn(err); }
   }
   async function loadLunch() {
-    if (!S.config.lunch) return;
-    try { S.lunch = await getJson('/api/lunch'); S.failed.lunch = false; } catch (err) { S.failed.lunch = true; console.warn(err); }
+    if (!S.config.lunch.length) return;
+    try {
+      S.lunch = (await getJson('/api/lunch')).schools;
+      S.failed.lunch = S.lunch.some((l) => l.failed);
+    } catch (err) { S.failed.lunch = true; console.warn(err); }
   }
 
   // ---- today ------------------------------------------------------------------
@@ -129,10 +132,10 @@
     });
   }
 
-  function nextLunch() {
-    if (!S.lunch || !S.lunch.days || !S.lunch.days.length) return null;
+  function nextLunch(lu) {
+    if (!lu || !lu.days || !lu.days.length) return null;
     const afterLunch = new Date().getHours() >= 13;
-    const L = S.lunch.days.find((d) => d.k > S.tkey || (d.k === S.tkey && !afterLunch));
+    const L = lu.days.find((d) => d.k > S.tkey || (d.k === S.tkey && !afterLunch));
     if (!L) return null;
     const off = offOf(parseKey(L.k));
     return { ...L, when: off === 0 ? 'Today' : off === 1 ? 'Tomorrow' : DOWL[parseKey(L.k).getDay()] };
@@ -158,11 +161,11 @@
       wx.innerHTML = `${wxIcon(w.current.c, '2.25rem')}<b>${w.current.t}°</b><span>${WXL[w.current.c]} · ${t.hi}°/${t.lo}°</span>`;
       wx.hidden = false;
     } else wx.hidden = true;
-    const L = nextLunch(), lb = $('#lunchbtn');
-    if (S.config.lunch && (L || S.lunch)) {
-      lb.innerHTML = `${FORK}${L ? `${L.when}: ${esc(L.entrees[0] || 'See menu')}` : 'Lunch menu'}`;
-      lb.hidden = false;
-    } else lb.hidden = true;
+    // One button per school, labeled with the school's name.
+    $('#lunches').innerHTML = S.config.lunch.map((name, i) => {
+      const lu = S.lunch && S.lunch[i], L = nextLunch(lu);
+      return `<button class="lunch" data-act="lunch" data-i="${i}">${FORK}<span><b>${esc((lu && lu.school) || name)}</b>${L ? `${L.when}: ${esc(L.entrees[0] || 'See menu')}` : 'Lunch menu'}</span></button>`;
+    }).join('');
   }
 
   function renderPeople() {
@@ -274,13 +277,13 @@
       + (hidden ? `<p class="foot">${hidden} more ${hidden === 1 ? 'event is' : 'events are'} hidden because ${hidden === 1 ? 'that person is' : 'those people are'} toggled off.</p>` : ''));
   }
 
-  function openLunch() {
-    const L = nextLunch(), lu = S.lunch;
+  function openLunch(i) {
+    const lu = S.lunch && S.lunch[i], L = nextLunch(lu);
     const rows = lu && lu.days.length ? lu.days.map((d) => {
       const dt = parseKey(d.k), off = offOf(dt);
       return `<div class="srow${L && d.k === L.k ? ' hl' : ''}"><span class="lday">${off === 0 ? 'Today' : off === 1 ? 'Tmrw' : `${DOW[dt.getDay()]} ${dt.getDate()}`}</span><div><div class="st">${esc(d.entrees.join(' or '))}</div>${d.sides.length ? `<div class="sm">${esc(d.sides.join(', '))}</div>` : ''}</div></div>`;
-    }).join('') : `<p class="empty">${S.failed.lunch ? 'The menu couldn’t be loaded right now.' : 'No school lunches posted for the next two weeks.'}</p>`;
-    openSheet(`<h2>School lunch</h2><p class="sub">${esc((lu && lu.school) || '')}</p>${rows}<p class="foot">From Nutrislice, refreshed hourly.</p>`);
+    }).join('') : `<p class="empty">${!lu || lu.failed ? 'The menu couldn’t be loaded right now.' : 'No school lunches posted for the next two weeks.'}</p>`;
+    openSheet(`<h2>School lunch</h2><p class="sub">${esc((lu && lu.school) || S.config.lunch[i] || '')}</p>${rows}<p class="foot">From Nutrislice, refreshed hourly.</p>`);
   }
 
   function openWeather() {
@@ -333,7 +336,7 @@
     if (a === 'close') { if (t.id === 'sheet' && e.target !== t) return; closeSheet(); }
     else if (a === 'toggle') toggle(t.dataset.id);
     else if (a === 'day') openDay(t.dataset.k);
-    else if (a === 'lunch') openLunch();
+    else if (a === 'lunch') openLunch(Number(t.dataset.i));
     else if (a === 'weather') openWeather();
     else if (a === 'today') scrollToday(true);
   });

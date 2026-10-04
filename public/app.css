@@ -33,6 +33,11 @@ button,[role="button"]{background:none;border:0;padding:0;margin:0;font:inherit;
 .wxpill:active{transform:scale(.97)}
 .lunch{background:var(--lunch);color:var(--ink);border-radius:999px;padding:.6875rem 1.125rem;font-weight:700;display:flex;align-items:center;gap:.5rem;font-size:.875rem}
 .lunch svg{width:1.25rem;height:1.25rem;flex:none}
+.lunches{display:flex;gap:.5rem;flex-wrap:wrap}
+.lunch{text-align:left;line-height:1.15;cursor:pointer}
+.lunch span{display:flex;flex-direction:column}
+.lunch b{font-size:.6875rem;text-transform:uppercase;letter-spacing:.06em;opacity:.7}
+.lunch:active{transform:scale(.97)}
 
 .people{display:flex;gap:.75rem;margin-left:auto}
 .pp{display:flex;flex-direction:column;align-items:center;gap:.3125rem;font-size:.75rem;font-weight:700;position:relative;transition:opacity .2s}

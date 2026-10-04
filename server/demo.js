@@ -15,7 +15,10 @@ const config = {
     { id: 'leo', name: 'Leo', color: '#108c5c' },
     { id: 'maple', name: 'Maple', color: '#f2a93b', dog: true },
   ],
-  lunch: { district: 'sunprairie', school: 'cardinal-heights-upper-middle', schoolName: 'Cardinal Heights Upper Middle', menuType: 'lunch' },
+  lunch: [
+    { district: 'sunprairie', school: 'northside', schoolName: 'Northside', menuType: 'lunch' },
+    { district: 'sunprairie', school: 'cardinal-heights-upper-middle', schoolName: 'Central Heights', menuType: 'lunch' },
+  ],
   countdowns: [{ title: 'Halloween', date: `${new Date().getFullYear()}-10-31` }],
 };
 
@@ -87,14 +90,15 @@ function weather() {
 }
 
 const MENU = [['Chicken tenders', 'Mashed potatoes, green beans, apple'], ['Cheese pizza', 'Caesar salad, baby carrots, pear'], ['Beef tacos', 'Black beans, corn, salsa, orange'], ['Pancakes & sausage', 'Hash browns, strawberries, yogurt'], ['Orange chicken', 'Brown rice, broccoli, mandarin'], ['Mac & cheese', 'Peas, garlic toast, banana'], ['Cheeseburger', 'Sweet potato fries, cucumbers, grapes'], ['Chicken quesadilla', 'Spanish rice, pinto beans, kiwi'], ['Spaghetti & meatballs', 'Breadstick, side salad, applesauce'], ['Turkey & cheese sub', 'Chips, celery sticks, watermelon']];
-function lunch() {
+function lunch(n = 0) {
+  const school = config.lunch[n];
   const days = [];
-  for (let d = today(), i = 0; days.length < 10; d = addDays(d, 1)) {
+  for (let d = today(), i = n * 3; days.length < 10; d = addDays(d, 1)) {
     if (d.getDay() === 0 || d.getDay() === 6) continue;
     const [e, s] = MENU[i++ % MENU.length];
     days.push({ k: dayKey(d), entrees: [e], sides: s.split(', ') });
   }
-  return { school: config.lunch.schoolName, url: 'https://sunprairie.nutrislice.com/menu/cardinal-heights-upper-middle/lunch/', days };
+  return { school: school.schoolName, url: `https://sunprairie.nutrislice.com/menu/${school.school}/lunch/`, days };
 }
 
 module.exports = { config, events, meals, weather, lunch };
