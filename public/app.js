@@ -19,6 +19,7 @@
   const PAW = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><ellipse cx="12" cy="16" rx="5" ry="4.3"/><ellipse cx="5.4" cy="10.4" rx="2.1" ry="2.6"/><ellipse cx="9.5" cy="6.3" rx="2.1" ry="2.7"/><ellipse cx="14.5" cy="6.3" rx="2.1" ry="2.7"/><ellipse cx="18.6" cy="10.4" rx="2.1" ry="2.6"/></svg>';
   const FORK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3v7a2 2 0 0 0 4 0V3M8 12v9M17 21V3c-2 0-3.5 2.5-3.5 6s1.5 4 3.5 4"/></svg>';
   const CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+  const ARROW = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg>';
   const MOON = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.5 14.6A8.5 8.5 0 0 1 9.4 3.5a8.5 8.5 0 1 0 11.1 11.1z"/></svg>';
   const WXL = { sun: 'Sunny', partly: 'Partly cloudy', cloud: 'Cloudy', rain: 'Rain', snow: 'Snow', storm: 'Storms' };
 
@@ -264,12 +265,28 @@
     st.hidden = problems.length === 0;
   }
 
-  function updMonth() {
+  /** Index of the week row at the top of the calendar. */
+  function topRow() {
     const ws = $('#weeks'), rows = ws.children;
     let i = 0;
     for (; i < rows.length - 1; i++) if (rows[i].offsetTop + rows[i].offsetHeight * 0.5 > ws.scrollTop) break;
-    const mid = addDays(S.start, i * 7 + 3);
+    return i;
+  }
+
+  function updMonth() {
+    const ws = $('#weeks');
+    const mid = addDays(S.start, topRow() * 7 + 3);
     $('#month').innerHTML = `${MON[mid.getMonth()]} <span>${mid.getFullYear()}</span>`;
+    // The scroll buttons grey out at either end.
+    $('#scrollup').disabled = ws.scrollTop <= 1;
+    $('#scrolldown').disabled = ws.scrollTop + ws.clientHeight >= ws.scrollHeight - 1;
+  }
+
+  /** Moves the calendar one week up or down, for screens that can't drag-scroll. */
+  function scrollWeeks(dir) {
+    const ws = $('#weeks'), rows = ws.children;
+    const i = Math.max(0, Math.min(rows.length - 1, topRow() + dir));
+    ws.scrollTo({ top: rows[i].offsetTop, behavior: 'smooth' });
   }
 
   function renderAll(resetScroll) {
@@ -465,6 +482,7 @@
     else if (a === 'lunch') openLunch(Number(t.dataset.i));
     else if (a === 'weather') openWeather();
     else if (a === 'today') scrollToday(true);
+    else if (a === 'scroll') scrollWeeks(Number(t.dataset.dir));
     else if (a === 'night') nightToggle();
     else if (a === 'countdowns') openCountdowns();
     else if (a === 'cd-remove') removeCountdown(t.dataset.id);
@@ -496,6 +514,7 @@
     S.P = Object.fromEntries(S.config.people.map((p) => [p.id, p]));
     S.FAM = S.config.people.filter((p) => !p.dog).map((p) => p.id);
     S.on = new Set(S.config.people.map((p) => p.id).filter((id) => !(saved.off || []).includes(id)));
+    $('#scrollup').innerHTML = ARROW; $('#scrolldown').innerHTML = ARROW;
     $('#dow').innerHTML = DOW.map((d) => `<span>${d}</span>`).join('');
     setToday();
     await Promise.all([loadEvents(), loadWeather(), loadLunch()]);

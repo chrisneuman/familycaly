@@ -172,3 +172,11 @@ button,[role="button"]{background:none;border:0;padding:0;margin:0;font:inherit;
 .cdform .yr input{width:1.2rem;height:1.2rem}
 .cdform .add{margin-left:0;background:var(--accent);color:#fff}
 .err{color:#c0264b}
+
+/* scroll buttons, for touch screens that only send taps */
+.sbtn{display:grid;place-items:center;padding:.5625rem 1.25rem;cursor:pointer}
+.sbtn+.sbtn,.sbtn+.today{margin-left:0}
+.sbtn svg{width:1.05rem;height:1.05rem}
+#scrolldown svg{transform:rotate(180deg)}
+.sbtn:active{transform:scale(.94)}
+.sbtn:disabled{opacity:.35;cursor:default}
