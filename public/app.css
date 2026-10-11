@@ -172,3 +172,14 @@ button,[role="button"]{background:none;border:0;padding:0;margin:0;font:inherit;
 .cdform .yr input{width:1.2rem;height:1.2rem}
 .cdform .add{margin-left:0;background:var(--accent);color:#fff}
 .err{color:#c0264b}
+
+/* scroll buttons, for touch screens that only send taps */
+.weekswrap{flex:1;min-height:0;display:flex;gap:.5rem}
+.weekswrap .weeks{flex:1;min-width:0}
+.dow{margin-right:4.25rem}
+.scrollbtns{flex:none;display:flex;flex-direction:column;justify-content:center;gap:1rem;padding-bottom:.625rem}
+.sbtn{width:3.75rem;height:3.75rem;border-radius:999px;background:var(--ink);color:#fff;display:grid;place-items:center;box-shadow:0 .25rem 1rem rgba(6,9,18,.2);cursor:pointer;transition:opacity .2s,transform .1s}
+.sbtn svg{width:1.75rem;height:1.75rem}
+.sbtn#scrolldown svg{transform:rotate(180deg)}
+.sbtn:active{transform:scale(.92)}
+.sbtn:disabled{opacity:.25;cursor:default}
